@@ -47,6 +47,47 @@ document.addEventListener("DOMContentLoaded", function () {
     "</svg>";
   document.body.prepend(btn);
 
+  // Top navigation bar: one row carrying prev, syllabus and next.
+  // The prev/next links are cloned from the bottom nav so the two can never
+  // drift apart, and the standalone "Back to syllabus" link is folded into
+  // the middle slot rather than sitting on its own line above it.
+  var article = document.querySelector("article");
+  var bottomNav = article && article.querySelector("nav");
+  if (bottomNav) {
+    var backLink = article.querySelector('a[href="../index.html"]');
+    var ends = Array.prototype.slice.call(bottomNav.children);
+    var linkCls =
+      "text-muted hover:text-c2 transition-colors whitespace-nowrap " +
+      "overflow-hidden text-ellipsis";
+
+    var bar = document.createElement("div");
+    // a 3-column grid, not flex: on the first and last pages one end is an
+    // empty placeholder, and with flex that collapses and drags the middle
+    // link off centre
+    bar.className =
+      "mb-12 grid grid-cols-3 items-center gap-6 pb-4 text-sm " +
+      "border-b border-gray-200 dark:border-gray-800";
+
+    var prev = ends[0].cloneNode(true);
+    prev.className =
+      (ends[0].tagName === "A" ? linkCls : "") + " justify-self-start";
+    var next = ends[ends.length - 1].cloneNode(true);
+    next.className =
+      (ends[ends.length - 1].tagName === "A" ? linkCls : "") +
+      " justify-self-end";
+
+    var mid = document.createElement("a");
+    mid.href = backLink ? backLink.getAttribute("href") : "../index.html";
+    mid.textContent = "Syllabus";
+    mid.className = linkCls + " justify-self-center";
+
+    bar.appendChild(prev);
+    bar.appendChild(mid);
+    bar.appendChild(next);
+    article.insertBefore(bar, article.children[0]);
+    if (backLink) backLink.hidden = true;
+  }
+
   // Add copy buttons to all code blocks
   document.querySelectorAll("pre > code").forEach(function (codeEl) {
     var pre = codeEl.parentElement;

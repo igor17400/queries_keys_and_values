@@ -1,6 +1,6 @@
 # Fdb version 4
-["pdflatex"] 1788279881 "lookup_not_memorise.tex" "lookup_not_memorise.pdf" "lookup_not_memorise" 1788279881 0
-  "/dev/null" 1788279881 0 d41d8cd98f00b204e9800998ecf8427e ""
+["pdflatex"] 1788285202 "lookup_not_memorise.tex" "lookup_not_memorise.pdf" "lookup_not_memorise" 1788285203 0
+  "/dev/null" 1788285203 0 d41d8cd98f00b204e9800998ecf8427e ""
   "/usr/local/texlive/2023/texmf-dist/fonts/map/fontname/texfonts.map" 1577235249 3524 cb3e574dea2d1052e39280babc910dc8 ""
   "/usr/local/texlive/2023/texmf-dist/fonts/tfm/public/cm/cmss10.tfm" 1136768653 1316 b636689f1933f24d1294acdf6041daaa ""
   "/usr/local/texlive/2023/texmf-dist/fonts/tfm/public/cm/cmss8.tfm" 1136768653 1296 d77f431d10d47c8ea2cc18cf45346274 ""
@@ -111,7 +111,7 @@
   "/usr/local/texlive/2023/texmf-var/fonts/map/pdftex/updmap/pdftex.map" 1697696699 4623355 b8cad38412faebe1ce5b780a45db67bd ""
   "/usr/local/texlive/2023/texmf-var/web2c/pdftex/pdflatex.fmt" 1697696665 7883458 5f4dae27b4f4ef15012d76b6f397847e ""
   "/usr/local/texlive/2023/texmf.cnf" 1678822455 577 1b2b1af17af2508fb20dd85783af4050 ""
-  "lookup_not_memorise.aux" 1788279881 32 3985256e7290058c681f74d7a3565a19 "pdflatex"
+  "lookup_not_memorise.aux" 1788285203 32 3985256e7290058c681f74d7a3565a19 "pdflatex"
   "lookup_not_memorise.tex" 1788279879 4841 561f23a497c03c099ff9b2a73f142641 ""
   (generated)
   "lookup_not_memorise.aux"

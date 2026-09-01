@@ -68,17 +68,188 @@
           Measuring Similarity
         </h1>
         <p class="text-lg text-muted leading-relaxed">
-          Dot products, projections, and what it actually means for a key to match a query.
+          Dot products, projections, and what it actually means for a key to
+          match a query.
         </p>
       </header>
 
       <div
         class="space-y-12 text-gray-700 dark:text-gray-300 leading-relaxed text-[17px]"
       >
-        <!-- TODO: written together. See figures/FIGURE_PLAN.md for the
-             schematics planned for this section. -->
         <section>
-          <p class="text-muted italic">Not written yet.</p>
+          <h2 class="text-2xl font-semibold text-ink dark:text-white mb-4">
+            Two vectors in, one number out
+          </h2>
+          <p>
+            Here is the entire requirement. Two vectors go in, one number comes
+            out. That number should indicate how similar the vectors are, or how
+            different they are. There's one operation that already does that for
+            us. By multiplying two vectors element by element and adding up the
+            results, we have the <strong>dot product</strong>.
+          </p>
+
+          <p class="mt-4">
+            Before we look at any numbers, let's be clear about which two
+            vectors these are. The query $q$ is the request itself, the numeric
+            form of <em>what did the cat chase?</em>
+          </p>
+          <p class="mt-4">
+            The key $k$ belongs to one single word, and it's whatever makes that
+            word findable. So there is one query and one key per word, which
+            means
+            <span class="hl-c2"
+              >this multiply-and-add happens once for every word in the
+              sentence</span
+            >, giving each word its own score. Where those numbers actually come
+            from is
+            <a
+              href="self_attention.html"
+              class="text-c2 hover:text-c3 transition-colors"
+              >section 06</a
+            >. For now, assume someone hands them to us.
+          </p>
+
+          <figure class="my-10 flex flex-col items-center">
+            <img
+              src="../figures/build/dot_product_steps.svg"
+              alt="The same three-number query vector is multiplied element by element against two different key vectors. The products are summed, giving 0.86 for the key that is alike and -1.44 for the key that is not."
+              class="w-full max-w-2xl"
+            />
+            <figcaption class="mt-3 text-sm text-muted text-center max-w-xl">
+              The dot product, twice, with the same query against two
+              different keys. Multiply the two vectors position by position, add
+              the products together, and one number falls out. The cells are the
+              three numbers inside a single vector, not the words of the
+              sentence: every word has its own key, and here the query is
+              compared against two of them. The same query gives 0.86 against
+              one key and $-1.44$ against another, which is exactly the
+              behaviour we asked for.
+            </figcaption>
+          </figure>
+
+          <p class="mt-4">Let's now define this operation more formally:</p>
+          <div
+            class="my-3 py-3 text-center rounded-lg border border-c3/40 bg-c3/5"
+          >
+            $$q \cdot k = \sum_{i=1}^{d} q_i k_i$$
+          </div>
+          <p class="mt-4">
+            where $d$ is the number of entries in each vector, three in the
+            figure above. Both vectors have to be the same length for this to
+            work at all, which is why
+            <span class="hl-c2"
+              >every query and every key in a model share one dimension</span
+            >.
+          </p>
+        </section>
+
+        <section>
+          <h2 class="text-2xl font-semibold text-ink dark:text-white mb-4">
+            Why that number means similarity
+          </h2>
+          <p>
+            So we said that we have to multiply and add to get a number which I
+            told you measures similarity. But nothing we have written down says
+            why that sum should have anything to do with similarity. For all we
+            know it is an arbitrary rule that happens to produce different
+            numbers for different inputs. Is this considered similarity?
+          </p>
+
+          <p class="mt-4">
+            It is not arbitrary, and there is a second way of writing the dot
+            product that shows why:
+          </p>
+          <div
+            class="my-3 py-3 text-center rounded-lg border border-c3/40 bg-c3/5"
+          >
+            $$q \cdot k = \lVert q \rVert \, \lVert k \rVert \cos\theta$$
+          </div>
+          <p class="mt-4">
+            where $\lVert q \rVert$ and $\lVert k \rVert$ are the lengths of the
+            two vectors and $\theta$ is the angle between them. The same number
+            as before, computed a completely different way, and now,
+            interestingly, we can see geometrically why it makes sense.
+          </p>
+
+          <p class="mt-4">
+            Everything follows from the $\cos\theta$. Two vectors pointing the
+            same way have $\theta = 0$ and $\cos\theta = 1$, the largest it ever
+            gets. Turn one of them until they sit perpendicular to one another
+            and $\cos\theta = 0$, so
+            <span class="hl-c2"
+              >the dot product vanishes no matter how long the vectors are</span
+            >. Keep turning until they point in opposite directions and
+            $\cos\theta = -1$, which is where negative scores come from.
+          </p>
+
+          <figure class="my-10 flex flex-col items-center">
+            <img
+              src="../figures/build/dot_product_geometry.svg"
+              alt="Three panels showing a query vector and a key vector at a small angle, at right angles, and at an obtuse angle. The projection of the key onto the query is long and positive, zero, then negative."
+              class="w-full max-w-2xl"
+            />
+            <figcaption class="mt-3 text-sm text-muted text-center max-w-xl">
+              The same query with the key turned further round each time. The
+              dot product is the length of the key's shadow on the query, times
+              the length of the query. Drop the key straight down and that
+              shadow is $\lVert k \rVert \cos\theta$, which is the whole score
+              up to the constant $\lVert q \rVert$. Turn the key past a right
+              angle and the shadow falls the other way, which is what a negative
+              score means.
+            </figcaption>
+          </figure>
+        </section>
+
+        <section>
+          <h2 class="text-2xl font-semibold text-ink dark:text-white mb-4">
+            One query, five scores
+          </h2>
+          <p>
+            So far we have only compared the query against two keys, and one at
+            a time. The model doesn't work that way. It takes the one query and
+            runs the same dot product against every key in the sentence, so five
+            words give five numbers, one per word. That list is what the model
+            is really after:
+            <span class="hl-c2"
+              >which word scores highest, and which scores lowest</span
+            >.
+          </p>
+
+          <p class="mt-4">
+            Those five numbers, one for each word in the sentence
+            <em>the cat chased the mouse</em>, are not yet weights. They do not
+            add up to anything in particular. Some of them are negative, and
+            nothing stops one of them being a number like 12 or 24, while the
+            others can sit near zero. We cannot blend five values in proportion
+            to a list like that, because <em>in proportion to</em> has no
+            meaning until the numbers are all positive and add up to one.
+          </p>
+
+          <figure class="my-10 flex flex-col items-center">
+            <img
+              src="../figures/build/five_scores.svg"
+              alt="The five raw scores for the sentence, drawn as bars either side of zero: -1.85, -0.34, -0.75, -1.44 and 0.86, with mouse the only positive one."
+              class="w-full max-w-xl"
+            />
+            <figcaption class="mt-3 text-sm text-muted text-center max-w-xl">
+              What the model actually produces: one number per word, drawn
+              either side of zero. The ordering is already right, with
+              <em>mouse</em> on top, so the dot product has done its job. But
+              four of the five are negative, and together they come to $-3.52$,
+              which is not a quantity anything can be shared out in proportion
+              to.
+            </figcaption>
+          </figure>
+
+          <p class="mt-4">
+            There's a second problem hiding in the size of these numbers. Our
+            vectors hold three numbers each, so a score is a sum of three
+            products, and it stays small. Real models use 64 or more, and a sum
+            of 64 products is a far bigger number than a sum of three. The
+            scores grow with the dimension, purely because there are more terms
+            in the sum, and that turns out to cause real trouble when we try to
+            turn them into weights.
+          </p>
         </section>
       </div>
 
@@ -86,8 +257,16 @@
       <nav
         class="mt-20 pt-8 border-t border-gray-200 dark:border-gray-800 flex justify-between text-sm"
       >
-        <a href="dictionary_analogy.html" class="text-muted hover:text-c2 transition-colors">&larr; The Dictionary Analogy</a>
-        <a href="softmax_weights.html" class="text-muted hover:text-c2 transition-colors">From Scores to Weights &rarr;</a>
+        <a
+          href="dictionary_analogy.html"
+          class="text-muted hover:text-c2 transition-colors"
+          >&larr; The Dictionary Analogy</a
+        >
+        <a
+          href="softmax_weights.html"
+          class="text-muted hover:text-c2 transition-colors"
+          >From Scores to Weights &rarr;</a
+        >
       </nav>
     </article>
   </body>
