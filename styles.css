@@ -49,6 +49,16 @@
   border-color: rgba(228, 145, 201, 0.25);
 }
 
+/* Figures in dark mode.
+   The SVGs are built with dark navy text on a transparent ground, so on a dark
+   page they disappear. Rather than shipping two builds of every figure, each
+   one gets its own light card. */
+.dark figure img {
+  background: #fbf8f8;
+  border-radius: 10px;
+  padding: 10px;
+}
+
 /* Cover.
    The grid and the gradient are both background-images, so they must live in a
    single declaration. Splitting them across two rules makes the later one

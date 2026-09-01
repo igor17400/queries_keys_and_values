@@ -68,17 +68,334 @@
           From Scores to Weights
         </h1>
         <p class="text-lg text-muted leading-relaxed">
-          Softmax, sharpness, and why we divide the scores by the square root of the key dimension.
+          Softmax, sharpness, and why we divide the scores.
         </p>
       </header>
 
       <div
         class="space-y-12 text-gray-700 dark:text-gray-300 leading-relaxed text-[17px]"
       >
-        <!-- TODO: written together. See figures/FIGURE_PLAN.md for the
-             schematics planned for this section. -->
         <section>
-          <p class="text-muted italic">Not written yet.</p>
+          <h2 class="text-2xl font-semibold text-ink dark:text-white mb-4">
+            What a weight has to be
+          </h2>
+          <p>
+            We ended the last section holding five numbers and a complaint that
+            they weren't weights. So what would make them weights? Short wish
+            list. They should be positive (we like positives). They should add
+            up to one, so that in proportion it means something to us. And the
+            order should have some meaning, that is the word that scored highest
+            still ends up with the biggest weight. Anything that pulls off those
+            three things will do.
+          </p>
+        </section>
+
+        <section>
+          <h2 class="text-2xl font-semibold text-ink dark:text-white mb-4">
+            Softmax
+          </h2>
+          <p>
+            The operation that does all three is called
+            <strong>softmax</strong>, and it has two steps. First, raise $e$ to
+            the power of each score. Then divide each result by the total of all
+            of them.
+          </p>
+          <div
+            class="my-3 py-3 text-center rounded-lg border border-c3/40 bg-c3/5"
+          >
+            $$\text{softmax}(s)_i = \frac{e^{s_i}}{\sum_{j=1}^{n} e^{s_j}}$$
+          </div>
+
+          <p class="mt-4">
+            As it can be seen in the figure below,
+            <span class="hl-c2">$e^{x}$ is positive for every $x$</span>. It
+            never reaches zero and it never crosses below it. So the
+            exponential, make sure our numbers go positive, and we did not have
+            to clip anything or take an absolute value to get there.
+          </p>
+
+          <figure class="my-10 flex flex-col items-center">
+            <img
+              src="../figures/build/exponential_positive.svg"
+              alt="The curve of e to the x, staying above the horizontal axis everywhere. The five scores are marked as dots on the curve, the lowest coming back as 0.157 and the highest as 2.363."
+              class="w-full max-w-xl"
+            />
+            <figcaption class="mt-3 text-sm text-muted text-center max-w-xl">
+              The five scores sitting on the curve. Going left the curve gets
+              closer and closer to the axis without ever arriving, so even a
+              very negative score comes back as a small positive number rather
+              than as zero or as something below it.
+            </figcaption>
+          </figure>
+
+          <p class="mt-4">
+            Once everything is positive, dividing by the total makes the numbers
+            to add up to one, which is all <em>in proportion</em>. And the
+            ordering survives both steps, because $e^{x}$ is increasing
+            function, a bigger score always gives a bigger exponential, and
+            dividing every one of them by the same total doesn't reorder them.
+          </p>
+
+          <figure class="my-10 flex flex-col items-center">
+            <img
+              src="../figures/build/softmax_bars.svg"
+              alt="Three columns of bars for the five words: the raw scores either side of zero, the same values after exponentiating, all positive and totalling 3.94, then divided by that total to give weights summing to 1."
+              class="w-full max-w-2xl"
+            />
+            <figcaption class="mt-3 text-sm text-muted text-center max-w-xxl">
+              The same five numbers, twice transformed. Exponentiating lifts
+              every bar above zero without changing which is longest, and
+              dividing by the total, 3.94, turns lengths into shares. The
+              weights on the right are the ones we have been using since the
+              very first figure.
+            </figcaption>
+          </figure>
+        </section>
+
+        <section>
+          <h2 class="text-2xl font-semibold text-ink dark:text-white mb-4">
+            Analyzing the spread
+          </h2>
+          <p>
+            Something quite interesting about softmax is that it is
+            <strong>shift-invariant</strong>, meaning
+          </p>
+          <div class="my-4 py-2 text-center">
+            $$\operatorname{softmax}(s + c) = \operatorname{softmax}(s)$$
+          </div>
+          <p class="mt-4">
+            for any constant $c$ added to every score. It follows in one line
+            from the definition:
+          </p>
+          <div class="my-4 py-2 text-center">
+            $$\frac{e^{s_i + c}}{\sum_j e^{s_j + c}} = \frac{e^{c}\,
+            e^{s_i}}{e^{c} \sum_j e^{s_j}} = \frac{e^{s_i}}{\sum_j e^{s_j}}$$
+          </div>
+          <p class="mt-4">
+            The factor $e^{c}$ appears once in the numerator and in every term
+            of the denominator, so it cancels.
+            <span class="hl-c2"
+              >Softmax never sees the scores themselves, only the differences
+              between them</span
+            >.
+          </p>
+
+          <p class="mt-4">
+            It's important to note that softmax is <em>not</em> invariant to
+            <b>scaling</b>. Replacing $s$ by $\alpha s$ multiplies every gap by
+            $\alpha$.
+          </p>
+
+          <p class="mt-4">
+            So why does any of this matter? The reason is because we don't get
+            to pick the scale of our scores. As we saw in the previous section,
+            a score is calculated as a sum of $d$ products. This means that the
+            more values we include in each vector, the larger the resulting
+            scores tend to be. The scale isn't a setting we are able to tweak,
+            it naturally drifts as the dimension changes. And because the
+            softmax function is reactive to the <strong>size</strong> of the
+            gaps between these scores, changing the dimension alters how focused
+            the attention mechanism is.
+          </p>
+
+          <p class="mt-4">
+            That is easier to see than to describe. Take the same five scores
+            and stretch or squash the gaps between them: multiply every score by
+            3, then by a quarter, and run softmax on each. The ordering never
+            moves, <em>mouse</em> stays on top in all three, but the shape of
+            the answer changes completely.
+          </p>
+
+          <div class="my-6 overflow-x-auto">
+            <table class="w-full text-[15px] tabular-nums">
+              <thead>
+                <tr
+                  class="text-left text-muted border-b border-gray-200 dark:border-gray-800"
+                >
+                  <th class="py-2 font-medium">word</th>
+                  <th class="py-2 font-medium text-right">
+                    scores &times; &frac14;
+                  </th>
+                  <th class="py-2 font-medium text-right">
+                    scores as they are
+                  </th>
+                  <th class="py-2 font-medium text-right">scores &times; 3</th>
+                </tr>
+              </thead>
+              <tbody class="text-gray-700 dark:text-gray-300">
+                <tr class="border-b border-gray-100 dark:border-gray-800/60">
+                  <td class="py-2"><strong>(1)</strong> The</td>
+                  <td class="py-2 text-right">0.15</td>
+                  <td class="py-2 text-right">0.04</td>
+                  <td class="py-2 text-right">0.00</td>
+                </tr>
+                <tr class="border-b border-gray-100 dark:border-gray-800/60">
+                  <td class="py-2"><strong>(2)</strong> cat</td>
+                  <td class="py-2 text-right">0.21</td>
+                  <td class="py-2 text-right">0.18</td>
+                  <td class="py-2 text-right">0.03</td>
+                </tr>
+                <tr class="border-b border-gray-100 dark:border-gray-800/60">
+                  <td class="py-2"><strong>(3)</strong> chased</td>
+                  <td class="py-2 text-right">0.19</td>
+                  <td class="py-2 text-right">0.12</td>
+                  <td class="py-2 text-right">0.01</td>
+                </tr>
+                <tr class="border-b border-gray-100 dark:border-gray-800/60">
+                  <td class="py-2"><strong>(4)</strong> the</td>
+                  <td class="py-2 text-right">0.16</td>
+                  <td class="py-2 text-right">0.06</td>
+                  <td class="py-2 text-right">0.00</td>
+                </tr>
+                <tr class="font-semibold text-c2">
+                  <td class="py-2"><strong>(5)</strong> mouse</td>
+                  <td class="py-2 text-right">0.29</td>
+                  <td class="py-2 text-right">0.60</td>
+                  <td class="py-2 text-right">0.96</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p class="mt-4">
+            Consider what these two extremes actually represent. Squashed, every
+            word gets roughly a fifth of the attention. The result is a blend of
+            all five values with <em>mouse</em> barely favoured, meaning the
+            model has effectively processed nothing of value. On the other hand
+            when scores are stretched, <em>mouse</em> takes 0.96 and everything
+            else rounds away to nothing, which is
+            <span class="hl-c2"
+              >the exact-match lookup we threw away back in section 02, arrived
+              at by accident</span
+            >. Neither end is any use to us, and we never chose either of them.
+            The dimension did.
+          </p>
+
+          <p class="mt-4">
+            Here's why the stretched end costs us. In section 02 we rejected the
+            exact match because it gave us no slope, and a nearly one-hot
+            softmax has the same problem in a somewhat milder form. The
+            derivative of a weight with respect to its own score is $w(1 - w)$,
+            which is largest around $w = 0.5$ and collapses as $w$ approaches 0
+            or 1. At 0.96 and 0.00 there is barely any gradient left, so
+            <span class="hl-c2"
+              >the model can barely learn that it attended to the wrong
+              word</span
+            >. So sharpening the weights does not only make the answer narrow,
+            as it also makes the mistake difficult to correct/learn.
+          </p>
+
+          <details class="my-6 panel-c4 rounded-xl">
+            <summary
+              class="px-6 py-4 cursor-pointer text-ink dark:text-white font-medium"
+            >
+              Aside: where $w(1-w)$ comes from
+            </summary>
+            <div class="px-6 pb-6 space-y-4 text-gray-700 dark:text-gray-300">
+              <p>
+                It is the quotient rule applied to the softmax definition. Give
+                the denominator a name, $Z = \sum_j e^{s_j}$, so that the weight
+                is simply $w_i = e^{s_i} / Z$.
+              </p>
+              <p>
+                Start with $\partial Z / \partial s_i$. Write $Z$ out with its
+                terms visible:
+              </p>
+              <div class="my-4 py-2 text-center">
+                $$Z = e^{s_1} + e^{s_2} + \cdots + e^{s_i} + \cdots + e^{s_n}$$
+              </div>
+              <p>
+                We are differentiating with respect to $s_i$, the score of one
+                particular word. Every other term in that sum holds a score we
+                are not moving, so each of them is a constant here and
+                differentiates to zero. Exactly one term survives, $e^{s_i}$,
+                and since $e^{x}$ is its own derivative it differentiates to
+                itself:
+              </p>
+              <div class="my-4 py-2 text-center">
+                $$\frac{\partial Z}{\partial s_i} = 0 + 0 + \cdots + e^{s_i} +
+                \cdots + 0 = e^{s_i}$$
+              </div>
+              <p>
+                Now the quotient rule on $w_i = e^{s_i} / Z$, where the
+                numerator also differentiates to $e^{s_i}$:
+              </p>
+              <div class="my-4 py-2 text-center">
+                $$\frac{\partial w_i}{\partial s_i} =
+                \frac{\left(\frac{\partial}{\partial s_i} e^{s_i}\right) Z -
+                e^{s_i} \frac{\partial Z}{\partial s_i}}{Z^{2}} = \frac{e^{s_i}
+                Z - e^{s_i} e^{s_i}}{Z^{2}} = \frac{e^{s_i}}{Z}\left(1 -
+                \frac{e^{s_i}}{Z}\right) = w_i\,(1 - w_i)$$
+              </div>
+              <p>
+                The last step just recognises $e^{s_i} / Z$ as $w_i$, twice
+                over. That substitution is what turns a formula about scores
+                into a formula about weights.
+              </p>
+              <p>
+                Now differentiate the same weight $w_i$ with respect to a
+                <em>different</em> word's score $s_j$. This time the numerator
+                $e^{s_i}$ contains no $s_j$ at all, so it comes along as a
+                constant, and the only thing that moves is the denominator,
+                which contributes $\partial Z / \partial s_j = e^{s_j}$. Writing
+                $w_i = e^{s_i} Z^{-1}$ and differentiating the $Z^{-1}$ gives a
+                factor of $-Z^{-2}$, so
+              </p>
+              <div class="my-4 py-2 text-center">
+                $$\frac{\partial w_i}{\partial s_j} = -\frac{e^{s_i}
+                e^{s_j}}{Z^{2}} = -w_i w_j \qquad (j \neq i)$$
+              </div>
+              <p>
+                Read the minus sign out loud: raising one word's score pushes
+                every other word's weight <em>down</em>. That is how the five
+                weights keep summing to one whichever score we move.
+              </p>
+
+              <h3 class="text-lg font-semibold text-ink dark:text-white pt-2">
+                The Jacobian, and why it matters
+              </h3>
+              <p>
+                We now have two cases, and they can be written as one
+                expression:
+              </p>
+              <div class="my-4 py-2 text-center">
+                $$\frac{\partial w_i}{\partial s_j} = w_i\,(\delta_{ij} - w_j)$$
+              </div>
+              <p>
+                where $\delta_{ij}$ is 1 when $i = j$ and 0 otherwise, so the
+                expression collapses to $w_i(1 - w_i)$ on the diagonal and to
+                $-w_i w_j$ off it. Collecting every combination of $i$ and $j$
+                gives a square table of numbers, five by five for our sentence,
+                and that table is the <strong>Jacobian</strong>: the derivative
+                of a vector output with respect to a vector input. Entry $(i,
+                j)$ answers one question, namely how much weight $i$ moves when
+                score $j$ is nudged.
+              </p>
+              <div class="my-4 py-2 text-center">
+                $$J = \begin{pmatrix} w_1(1 - w_1) & -w_1 w_2 & \cdots & -w_1
+                w_5 \\ -w_2 w_1 & w_2(1 - w_2) & \cdots & -w_2 w_5 \\ \vdots &
+                \vdots & \ddots & \vdots \\ -w_5 w_1 & -w_5 w_2 & \cdots & w_5(1
+                - w_5) \end{pmatrix}$$
+              </div>
+              <p>
+                It matters because it is the only route training has. When the
+                model gets an answer wrong, the correction arrives at the
+                weights, and this table is what carries it back to the scores,
+                and from there to the queries and keys that produced them. If
+                every entry is near zero, the correction arrives and nothing
+                moves.
+              </p>
+              <p>
+                That is exactly what saturation does. Every entry of $J$ is
+                built from products of weights, so a distribution like $(0.00,\,
+                0.03,\, 0.01,\, 0.00,\, 0.96)$ makes the whole table collapse:
+                the diagonal entries $w_i(1 - w_i)$ vanish because each $w_i$ is
+                close to 0 or to 1, and the off-diagonal entries $-w_i w_j$
+                vanish because at least one of the two weights in every product
+                is tiny.
+              </p>
+            </div>
+          </details>
         </section>
       </div>
 
@@ -86,8 +403,16 @@
       <nav
         class="mt-20 pt-8 border-t border-gray-200 dark:border-gray-800 flex justify-between text-sm"
       >
-        <a href="similarity.html" class="text-muted hover:text-c2 transition-colors">&larr; Measuring Similarity</a>
-        <a href="scaled_dot_product.html" class="text-muted hover:text-c2 transition-colors">Scaled Dot-Product Attention &rarr;</a>
+        <a
+          href="similarity.html"
+          class="text-muted hover:text-c2 transition-colors"
+          >&larr; Measuring Similarity</a
+        >
+        <a
+          href="scaled_dot_product.html"
+          class="text-muted hover:text-c2 transition-colors"
+          >Scaled Dot-Product Attention &rarr;</a
+        >
       </nav>
     </article>
   </body>
