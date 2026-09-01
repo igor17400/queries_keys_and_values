@@ -82,21 +82,164 @@
           </h2>
           <p>
             Consider a model that reads a sentence and has to answer a question
-            about it. Before attention, the standard recipe was a recurrent
-            network that walks the sentence one word at a time, carrying a
-            single hidden state that it updates at every step. By the time the
-            model reaches the full stop,
+            about it. Before attention, the standard recipe was a
+            <a
+              href="https://en.wikipedia.org/wiki/Recurrent_neural_network"
+              class="text-c2 hover:text-c3 underline decoration-c3/40 underline-offset-2 transition-colors"
+              target="_blank"
+              >recurrent network</a
+            >
+            that walks the sentence one word at a time, carrying a single hidden
+            state that it updates at every step. By the time the model reaches
+            the full stop,
             <span class="hl-c2"
               >everything it knows about the sentence has to fit inside that one
               vector</span
             >. It is the same size whether the sentence has five words or five
             hundred.
           </p>
+
+          <figure class="my-10 flex flex-col items-center">
+            <img
+              src="../figures/build/bottleneck_rnn.svg"
+              alt="Two sentences of very different lengths are each read by a recurrent network and compressed into a hidden state vector of the same fixed dimension d."
+              class="w-full max-w-2xl"
+            />
+            <figcaption class="mt-3 text-sm text-muted text-center max-w-xl">
+              The recurrent network compresses whatever it has read into a state
+              of fixed dimension $d$. Five words or five hundred, the model gets
+              the same number of slots to store them in.
+            </figcaption>
+          </figure>
         </section>
 
-        <!-- TODO, next: beat 2 (make the hidden state bigger, taken
-             seriously), then beat 3 (the break), where bottleneck_rnn lands.
-             See figures/FIGURE_PLAN.md. -->
+        <section>
+          <h2 class="text-2xl font-semibold text-ink dark:text-white mb-4">
+            Why not make the vector bigger?
+          </h2>
+          <!-- BEAT 2: the naive fix, taken seriously. Capacity is buyable, so
+               if capacity were the whole problem we could simply pay for it.
+               Must NOT reach the real break yet, that is the next paragraph. -->
+          <p>
+            The obvious response is to give the model more room. In other words,
+            increase the length of the vector so we have more space for the
+            sentence to live in. This indeed works quite well, and it was a real
+            part of how RNNs could be improved considerably. But as you might
+            have already guessed, this has a limit. The recurrent weight matrix
+            is $d \times d$, so doubling the state size quadruples the
+            parameters in that block, and a larger state is slower to train and
+            easier to overfit.
+          </p>
+
+          <p class="mt-4">
+            Let's assume for a moment something absurd, especially right now:
+            RAM prices are actually cheap and we can increase those vector sizes
+            as much as we want. Sadly, of course, that's nowhere close to the
+            current reality (maybe if you're reading from the future, RAM prices
+            are now cheaper, yay!!). Continuing, the problem doesn't go away,
+            because it was never <strong>only</strong> about size.
+          </p>
+
+          <p class="mt-4">
+            <em>The cat chased the mouse because it was hungry</em>. When asked
+            what the cat chased, the model needs one thing. When asked who was
+            hungry, the model needs another. The recurrent network has to write
+            its summary before it's even aware of the question. That is, the
+            vector we computed above (cute purple blocks) is computed before any
+            question is asked. In more formal terms,
+            <span class="hl-c2">the compression happens too early</span>, and no
+            amount of room or RAM actually fixes that.
+          </p>
+
+          <p class="mt-4">
+            Let's now go through another supposition. Say we refuse to compress
+            at all, that is, we keep one vector per word, which yields five of
+            them for the short sentence we're using as an example "<strong
+              >(1)</strong
+            >
+            The <strong>(2)</strong> cat <strong>(3)</strong> chased
+            <strong>(4)</strong> the <strong>(5)</strong> mouse". And suppose as
+            well that we let the model come back and read them whenever it needs
+            something, like the cheat sheet we can bring to exams. When it needs
+            to know who was hungry, it puts out a request; every word reports
+            how well it answers that request. And their contributions are
+            blended in proportion to how well they answered. In this assumption,
+            <span class="hl-c2"
+              >nothing has to be decided in advance, because in some ways
+              nothing was thrown away</span
+            >.
+          </p>
+
+          <figure class="my-10 flex flex-col items-center">
+            <img
+              src="../figures/build/lookup_not_memorise.svg"
+              alt="Each word of the sentence keeps its own vector. A request is matched against all five words, each reports a score, and the scores weight a blend of the word vectors into a single answer."
+              class="w-full max-w-2xl"
+            />
+            <figcaption class="mt-3 text-sm text-muted text-center max-w-xl">
+              Every word reports how well it answers the request, and the scores
+              decide how much of each word ends up in the answer. The five
+              scores sum to one, so the answer is a blend of the sentence rather
+              than a summary written before the request arrived. Pay attention
+              to the arrow widths: wider arrows are stronger weights.
+            </figcaption>
+          </figure>
+        </section>
+
+        <section>
+          <h2 class="text-2xl font-semibold text-ink dark:text-white mb-4">
+            What that buys, and what it hides
+          </h2>
+          <!-- BEAT 6 + 7: return to the opening complaint and show it gone,
+               then open the three undefined words (request, reply, score)
+               that the next section answers with the key-value store.
+               Do NOT name the mechanism here, the reveal is held back. -->
+          <p class="mt-4">
+            Look back at the complaint we started with. There is no longer a
+            single state that has to be the same size for five words and five
+            hundred, because there's not single stat <b>at all</b>. The sentence
+            stays where it is, and the model reads it whenever it has a reason
+            to. We have not made the cost disappear, though. We have move it,
+            now the model looks over every word each time it asks for something,
+            and that will of course yield a cost.
+          </p>
+
+          <p class="mt-4">
+            Look at the figure again. It shows three things as if we've already
+            figured out how to build them. An initial request comes in from the
+            left, but we aren't told where it originates or what it contains.
+            Then, each word generates a score without any clear rule explaining
+            how. The final step (using those scores to blend the words together)
+            is the only part we can actually execute right now, as it is simply
+            a weighted sum. Ultimately, two of these three steps are still just
+            conceptual.
+          </p>
+
+          <p class="mt-4">
+            Three words in that description were carrying all the weight:
+          </p>
+          <ol class="mt-3 ml-6 space-y-3 list-decimal text-[17px]">
+            <li>
+              <strong>The request.</strong> The model works with vectors, not
+              questions, so it is not even clear what a request is made of.
+            </li>
+            <li>
+              <strong>The reply.</strong> Every word hands something back when a
+              request arrives, and we never said what that something is.
+            </li>
+            <li>
+              <strong>The score.</strong> Some rule has to decide how well a
+              reply answers a request, and we have not written that rule down.
+            </li>
+          </ol>
+
+          <p class="mt-4">
+            None of this is new. What we have been describing, in a circular
+            way, is something programmers have used a few times. A lookup in a
+            key-value store. That is where the next section starts and it hands
+            us all three definitions at once.
+          </p>
+        </section>
       </div>
 
       <!-- Navigation -->

@@ -5,6 +5,11 @@
 *.dvi
 *.synctex.gz
 
+# Intermediate images inside the figure sources. The .tex stays tracked;
+# the compiled SVGs in figures/build/ are the ones the pages actually load.
+figures/src/**/*.pdf
+figures/src/**/*.png
+
 # Python
 __pycache__/
 .venv/
