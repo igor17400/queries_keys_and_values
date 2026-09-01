@@ -27,7 +27,7 @@ c4**. Never swap these between figures.
 | `bottleneck_rnn` | An encoder RNN squeezing a whole sentence into one fixed vector, with the decoder starved on the other side. The visual argument for attention. |
 | `lookup_vs_memorise` | Side by side: a model that must store everything in weights versus a model that keeps the context around and looks into it. |
 
-## 02 The Database Analogy
+## 02 The Dictionary Analogy
 
 | name | shows |
 |------|-------|

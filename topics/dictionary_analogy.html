@@ -1,0 +1,313 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>The Dictionary Analogy &mdash; Queries, Keys, and Values</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ["Inter", "system-ui", "sans-serif"],
+            },
+            colors: {
+              ink: "#15173D",
+              surface: "#FBF8F8",
+              muted: "#6B6472",
+              c1: "#15173D",
+              c2: "#982598",
+              c3: "#E491C9",
+              c4: "#F1E9E9",
+            },
+          },
+        },
+      };
+    </script>
+    <script src="../theme.js"></script>
+    <script>
+      window.MathJax = {
+        tex: {
+          inlineMath: [["$", "$"]],
+          displayMath: [["$$", "$$"]],
+        },
+      };
+    </script>
+    <script
+      id="MathJax-script"
+      async
+      src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"
+    ></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../styles.css" />
+  </head>
+  <body
+    class="bg-surface text-ink font-sans antialiased dark:bg-[#0d0e22] dark:text-gray-100"
+  >
+    <article class="max-w-3xl mx-auto px-6 py-20">
+      <!-- Back link -->
+      <a
+        href="../index.html"
+        class="text-sm text-muted hover:text-c2 transition-colors"
+        >&larr; Back to syllabus</a
+      >
+
+      <!-- Title -->
+      <header class="mt-8 mb-16">
+        <p class="text-sm text-c2 font-medium uppercase tracking-widest mb-3">
+          02 &nbsp;&middot;&nbsp; Queries, Keys, and Values
+        </p>
+        <h1 class="text-4xl md:text-5xl font-bold leading-tight mb-4">
+          The Dictionary Analogy
+        </h1>
+        <p class="text-lg text-muted leading-relaxed">
+          Queries, keys, and values: a soft dictionary lookup where every entry
+          is allowed to answer a little.
+        </p>
+      </header>
+
+      <div
+        class="space-y-12 text-gray-700 dark:text-gray-300 leading-relaxed text-[17px]"
+      >
+        <section>
+          <h2 class="text-2xl font-semibold text-ink dark:text-white mb-4">
+            Give it a key, get back a value
+          </h2>
+          <p>
+            We have been saying that the model asks the sentence a question,
+            without ever saying what asking means. The mechanism we need for it
+            is not new, and it is not particular to machine learning. It is
+            simply a key-value store (dictionary).
+            <span class="hl-c2"
+              >You hand it a key, and it hands you back a value</span
+            >.
+          </p>
+
+          <p class="mt-4">
+            Every entry in the store is a pair. The
+            <strong>key</strong> is what the entry can be found by; the
+            <strong>value</strong> is what the entry actually gives you once it
+            is found. A query comes in, we compare it against each key in turn,
+            and the one that matches hands over its value. The comparison is
+            exact, exactly one entry answers, and
+            <span class="hl-c3"
+              >every other entry in the store contributes nothing</span
+            >.
+          </p>
+
+          <!-- Gruvbox code box -->
+          <div
+            class="my-8 rounded-xl overflow-hidden border border-gray-300 dark:border-gray-700 shadow-lg"
+          >
+            <div class="bg-[#ebdbb2] px-4 py-2 flex items-center gap-2">
+              <span class="w-3 h-3 rounded-full bg-[#cc241d]"></span>
+              <span class="w-3 h-3 rounded-full bg-[#d79921]"></span>
+              <span class="w-3 h-3 rounded-full bg-[#98971a]"></span>
+              <span class="ml-3 text-xs text-[#7c6f64] font-mono"
+                >hard_lookup.py</span
+              >
+            </div>
+            <pre
+              class="!m-0 !p-0 text-sm font-mono leading-relaxed overflow-x-auto"
+            ><code class="language-python p-5 block">store = {
+    "cat":    "a small carnivorous mammal",
+    "mouse":  "a small rodent",
+    "chased": "pursued at speed",
+}
+
+store["mouse"]    # 'a small rodent'
+store["mouseee"]  # KeyError
+</code></pre>
+          </div>
+        </section>
+
+        <section>
+          <h2 class="text-2xl font-semibold text-ink dark:text-white mb-4">
+            Where it breaks
+          </h2>
+          <p>
+            That is exactly what we want, and it is also where the analogy falls
+            apart. A real query is never literally one of the keys. When we
+            asked what the cat chased, we did not hand the store the string
+            <code class="text-c2">"mouse"</code>. We handed it something closer
+            to the idea of the thing being chased, and nothing in the store is
+            filed under that.
+          </p>
+          <p class="mt-4">
+            We could keep patching the matcher, but the second problem cannot be
+            patched at all.
+            <span class="hl-c2"
+              >An exact match gives us nothing to learn from</span
+            >. Either a key matches or it does not, so the score is one or it is
+            zero, and a function that only ever returns one or zero has no
+            slope. There is no direction in which to nudge the query to make the
+            match better, because in some ways there is no better in this setup.
+            There is only a binary comparison, "found" and "not found".
+          </p>
+
+          <figure class="my-10 flex flex-col items-center">
+            <img
+              src="../figures/build/match_gradient.svg"
+              alt="Left: an exact match scores one at a single key and zero everywhere else, so the slope at our query is zero. Right: a soft match scores every key on a smooth curve, so the slope at our query points towards the better match."
+              class="w-full max-w-2xl"
+            />
+            <figcaption class="mt-3 text-sm text-muted text-center max-w-xl">
+              Learning means following a slope. On the
+              <strong>left</strong> there is none, the score is flat everywhere
+              except at one point, so no small change to the query improves
+              anything. On the <strong>right</strong> every key answers a
+              little, which gives the score a slope to follow.
+            </figcaption>
+          </figure>
+        </section>
+
+        <section>
+          <h2 class="text-2xl font-semibold text-ink dark:text-white mb-4">
+            Let every key answer a little
+          </h2>
+          <p>
+            So we give up the one thing that was causing all the trouble; that
+            is, the demand that exactly one entry answers. Instead of asking
+            whether a key matches, we now ask how well it matches, and what
+            comes back is a number rather than a yes or a no. Every key in the
+            store gets a score. We turn those scores into weights that add up to
+            one, and the store returns a blend of all the values. Each item in
+            that blend is weighted by how well its own key scored. Nothing is
+            ever not found any more, and at the same time everything is found a
+            little (I did not intend to make this poetic).
+          </p>
+
+          <p class="mt-4">
+            This is more general than what we started with. If one key scores
+            far above the rest, its weight goes to almost one and the others
+            decrease proportionately to almost zero. The blend is then
+            essentially that key's value.
+            <span class="hl-c2"
+              >The exact lookup is simply what a soft lookup looks like when
+              it's very confident</span
+            >.
+          </p>
+        </section>
+
+        <section>
+          <h2 class="text-2xl font-semibold text-ink dark:text-white mb-4">
+            Query, key, value
+          </h2>
+
+          <p>It is time to give the three things their names.</p>
+          <ul class="mt-3 ml-6 space-y-3 list-disc text-[17px]">
+            <li><strong>Query</strong> &rarr; what we're after.</li>
+            <li>
+              <strong>Key</strong> &rarr; what each entry offers up to be
+              matched against.
+            </li>
+            <li>
+              <strong>Value</strong> &rarr; what that entry hands back once it
+              is matched.
+            </li>
+          </ul>
+          <p class="mt-4">
+            Query, key and value, and that is the entire vocabulary for
+            everything that follows.
+          </p>
+
+          <p class="mt-4">
+            There's still something very simplistic about what we're trying to
+            illustrate here. Our store maps strings to strings, and we can't do
+            maths with a string. Scores and weights don't mean anything applied
+            to <code class="text-c2">"mouse"</code>.
+            <span class="hl-c2"
+              >Everything in here is going to have to be a vector</span
+            >.
+          </p>
+
+          <p class="mt-4">
+            Easy then: we just need to swap strings for vectors, and look at
+            what the store turns into. It isn't something we write by hand any
+            more.
+            <span class="hl-c2">It's the sentence itself</span>. Every word
+            becomes a key vector, which is how it gets found, and a value
+            vector, which is what it hands over. Five words, five entries. The
+            query is a vector too! And it comes from whichever part of the model
+            needs to know something.
+          </p>
+
+          <figure class="my-10 flex flex-col items-center">
+            <img
+              src="../figures/build/soft_dictionary.svg"
+              alt="The sentence acts as the store: each word supplies a key vector and a value vector. The query is compared against every key, producing a weight per word, and the answer is every value blended in proportion to its weight."
+              class="w-full max-w-2xl"
+            />
+            <figcaption class="mt-3 text-sm text-muted text-center max-w-xl">
+              The soft lookup in full. Each word supplies a key, which is how it
+              gets found, and a value, which is what it hands over. The query is
+              compared against every key at once, and the answer is a blend of
+              all five values. The weights are the same ones we used before, so
+              this is the same lookup, now with the vectors drawn in.
+            </figcaption>
+          </figure>
+
+          <p class="mt-4">
+            So a word isn't mapped to a written definition any more. It's mapped
+            to numbers, and to two sets of them: a <strong>key</strong> vector
+            and a <strong>value</strong> vector. And unlike a real dictionary,
+            nothing is looked up from a fixed table the way it was in the code
+            above. Each position in the sentence produces its own key and its
+            own value, which is why the two occurrences of
+            <code class="text-c2">"the"</code> are separate entries rather than
+            one entry consulted <strong>twice</strong> (pay attention that one
+            <code class="text-c2">"the"</code> has weight 0.04 and the other has
+            weight 0.06).
+          </p>
+
+          <p class="mt-4">
+            This soft lookup has a name, and it's the reason we started here at
+            all.
+          </p>
+
+          <div
+            class="my-8 panel-c4 rounded-xl border-l-4 border-l-c2 px-7 py-6"
+          >
+            <p class="text-xs tracking-[0.2em] text-c2 font-semibold mb-3">
+              Attention
+            </p>
+            <p class="text-ink dark:text-white text-lg leading-relaxed">
+              A query, a set of keys, a set of values, and an answer built by
+              blending every value in proportion to how well its key matched the
+              query.
+            </p>
+          </div>
+
+          <p class="mt-4">
+            Great, but we still have problems to resolve. Two of them, in fact.
+            How do we compare a query with a key to get a score out? And where
+            do all these vectors come from in the first place? The first is the
+            next section. The second has to wait a little longer, because it
+            needs something we haven't touched yet.
+          </p>
+        </section>
+      </div>
+
+      <!-- Navigation -->
+      <nav
+        class="mt-20 pt-8 border-t border-gray-200 dark:border-gray-800 flex justify-between text-sm"
+      >
+        <a href="intro.html" class="text-muted hover:text-c2 transition-colors"
+          >&larr; Why Attention?</a
+        >
+        <a
+          href="similarity.html"
+          class="text-muted hover:text-c2 transition-colors"
+          >Measuring Similarity &rarr;</a
+        >
+      </nav>
+    </article>
+  </body>
+</html>
