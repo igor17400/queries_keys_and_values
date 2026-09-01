@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Masking and Causality &mdash; Queries, Keys, and Values</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ["Inter", "system-ui", "sans-serif"],
+            },
+            colors: {
+              ink: "#15173D",
+              surface: "#FBF8F8",
+              muted: "#6B6472",
+              c1: "#15173D",
+              c2: "#982598",
+              c3: "#E491C9",
+              c4: "#F1E9E9",
+            },
+          },
+        },
+      };
+    </script>
+    <script src="../theme.js"></script>
+    <script>
+      window.MathJax = {
+        tex: {
+          inlineMath: [["$", "$"]],
+          displayMath: [["$$", "$$"]],
+        },
+      };
+    </script>
+    <script
+      id="MathJax-script"
+      async
+      src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"
+    ></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../styles.css" />
+  </head>
+  <body
+    class="bg-surface text-ink font-sans antialiased dark:bg-[#0d0e22] dark:text-gray-100"
+  >
+    <article class="max-w-3xl mx-auto px-6 py-20">
+      <!-- Back link -->
+      <a
+        href="../index.html"
+        class="text-sm text-muted hover:text-c2 transition-colors"
+        >&larr; Back to syllabus</a
+      >
+
+      <!-- Title -->
+      <header class="mt-8 mb-16">
+        <p class="text-sm text-c2 font-medium uppercase tracking-widest mb-3">
+          08 &nbsp;&middot;&nbsp; Queries, Keys, and Values
+        </p>
+        <h1 class="text-4xl md:text-5xl font-bold leading-tight mb-4">
+          Masking and Causality
+        </h1>
+        <p class="text-lg text-muted leading-relaxed">
+          Padding masks, causal masks, and how we forbid a query from reading the future.
+        </p>
+      </header>
+
+      <div
+        class="space-y-12 text-gray-700 dark:text-gray-300 leading-relaxed text-[17px]"
+      >
+        <!-- TODO: written together. See figures/FIGURE_PLAN.md for the
+             schematics planned for this section. -->
+        <section>
+          <p class="text-muted italic">Not written yet.</p>
+        </section>
+      </div>
+
+      <!-- Navigation -->
+      <nav
+        class="mt-20 pt-8 border-t border-gray-200 dark:border-gray-800 flex justify-between text-sm"
+      >
+        <a href="multi_head.html" class="text-muted hover:text-c2 transition-colors">&larr; Multi-Head Attention</a>
+        <a href="positional.html" class="text-muted hover:text-c2 transition-colors">Positional Information &rarr;</a>
+      </nav>
+    </article>
+  </body>
+</html>

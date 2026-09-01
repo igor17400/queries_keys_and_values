@@ -1,0 +1,14 @@
+# LaTeX build artifacts
+*.aux
+*.log
+*.out
+*.dvi
+*.synctex.gz
+
+# Python
+__pycache__/
+.venv/
+*.pyc
+
+.DS_Store
+.claude/

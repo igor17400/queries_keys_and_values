@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Why Attention? &mdash; Queries, Keys, and Values</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ["Inter", "system-ui", "sans-serif"],
+            },
+            colors: {
+              ink: "#15173D",
+              surface: "#FBF8F8",
+              muted: "#6B6472",
+              c1: "#15173D",
+              c2: "#982598",
+              c3: "#E491C9",
+              c4: "#F1E9E9",
+            },
+          },
+        },
+      };
+    </script>
+    <script src="../theme.js"></script>
+    <script>
+      window.MathJax = {
+        tex: {
+          inlineMath: [["$", "$"]],
+          displayMath: [["$$", "$$"]],
+        },
+      };
+    </script>
+    <script
+      id="MathJax-script"
+      async
+      src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"
+    ></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../styles.css" />
+  </head>
+  <body
+    class="bg-surface text-ink font-sans antialiased dark:bg-[#0d0e22] dark:text-gray-100"
+  >
+    <article class="max-w-3xl mx-auto px-6 py-20">
+      <!-- Back link -->
+      <a
+        href="../index.html"
+        class="text-sm text-muted hover:text-c2 transition-colors"
+        >&larr; Back to syllabus</a
+      >
+
+      <!-- Title -->
+      <header class="mt-8 mb-16">
+        <p class="text-sm text-c2 font-medium uppercase tracking-widest mb-3">
+          01 &nbsp;&middot;&nbsp; Queries, Keys, and Values
+        </p>
+        <h1 class="text-4xl md:text-5xl font-bold leading-tight mb-4">
+          Why Attention?
+        </h1>
+        <p class="text-lg text-muted leading-relaxed">
+          The fixed-vector bottleneck, and the idea of letting a model look
+          things up instead of memorising.
+        </p>
+      </header>
+
+      <div
+        class="space-y-12 text-gray-700 dark:text-gray-300 leading-relaxed text-[17px]"
+      >
+        <section>
+          <h2 class="text-2xl font-semibold text-ink dark:text-white mb-4">
+            One vector for the whole sentence
+          </h2>
+          <p>
+            Consider a model that reads a sentence and has to answer a question
+            about it. Before attention, the standard recipe was a recurrent
+            network that walks the sentence one word at a time, carrying a
+            single hidden state that it updates at every step. By the time the
+            model reaches the full stop,
+            <span class="hl-c2"
+              >everything it knows about the sentence has to fit inside that one
+              vector</span
+            >. It is the same size whether the sentence has five words or five
+            hundred.
+          </p>
+        </section>
+
+        <!-- TODO, next: beat 2 (make the hidden state bigger, taken
+             seriously), then beat 3 (the break), where bottleneck_rnn lands.
+             See figures/FIGURE_PLAN.md. -->
+      </div>
+
+      <!-- Navigation -->
+      <nav
+        class="mt-20 pt-8 border-t border-gray-200 dark:border-gray-800 flex justify-between text-sm"
+      >
+        <span></span>
+        <a
+          href="database_analogy.html"
+          class="text-muted hover:text-c2 transition-colors"
+          >The Database Analogy &rarr;</a
+        >
+      </nav>
+    </article>
+  </body>
+</html>

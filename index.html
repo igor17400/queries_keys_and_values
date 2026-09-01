@@ -1,0 +1,390 @@
+<!doctype html>
+<html lang="en" class="scroll-smooth">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Queries, Keys, and Values</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ["Inter", "system-ui", "sans-serif"],
+            },
+            colors: {
+              ink: "#15173D",
+              surface: "#FBF8F8",
+              muted: "#6B6472",
+              c1: "#15173D",
+              c2: "#982598",
+              c3: "#E491C9",
+              c4: "#F1E9E9",
+            },
+          },
+        },
+      };
+    </script>
+    <script src="theme.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body
+    class="bg-surface text-ink font-sans antialiased dark:bg-[#0d0e22] dark:text-gray-100"
+  >
+    <!-- Cover -->
+    <section
+      class="relative min-h-screen flex items-center justify-center overflow-hidden gradient-bg cover-grid"
+    >
+      <div
+        class="glow-orb w-96 h-96 bg-c2 top-10 -left-20"
+        style="position: absolute"
+      ></div>
+      <div
+        class="glow-orb w-80 h-80 bg-c4 bottom-10 right-10"
+        style="position: absolute"
+      ></div>
+      <div
+        class="glow-orb w-64 h-64 bg-c3 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
+        style="position: absolute"
+      ></div>
+
+      <div class="relative z-10 text-center px-6 max-w-3xl mx-auto">
+        <p class="text-c4 text-sm font-medium tracking-widest uppercase mb-6">
+          Attention Mechanisms
+        </p>
+        <h1
+          class="text-5xl md:text-7xl font-bold text-white leading-tight mb-6"
+          style="text-shadow: 0 2px 24px rgba(21, 23, 61, 0.35)"
+        >
+          Queries, Keys, <br />and Values
+        </h1>
+        <p
+          class="text-lg md:text-xl text-white/85 leading-relaxed max-w-2xl mx-auto mb-16"
+          style="text-shadow: 0 1px 12px rgba(21, 23, 61, 0.3)"
+        >
+          Understand the database-like retrieval mechanism that lets a model
+          <br /><em>search its own context</em><br />for the features it
+          actually needs.
+        </p>
+      </div>
+
+      <!-- Scroll indicator -->
+      <div
+        class="absolute bottom-8 left-1/2 -translate-x-1/2 text-white/50 animate-bounce"
+      >
+        <svg
+          class="w-6 h-6"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M19 14l-7 7m0 0l-7-7m7 7V3"
+          />
+        </svg>
+      </div>
+    </section>
+
+    <!-- Syllabus -->
+    <section class="py-24 px-6">
+      <div class="max-w-2xl mx-auto">
+        <p class="text-sm text-muted uppercase tracking-widest mb-4">
+          Syllabus
+        </p>
+        <h2 class="text-3xl font-semibold mb-4">Topics</h2>
+        <p class="text-muted mb-12 leading-relaxed">
+          Sections 01 to 11 build the mechanism from scratch. Sections 12 to 15
+          take it to time series, where the sequence is a signal rather than a
+          sentence.
+        </p>
+
+        <div class="space-y-6">
+          <a href="topics/intro.html" class="block group">
+            <div class="flex items-baseline gap-4">
+              <span class="text-sm text-c2 font-medium">01</span>
+              <div>
+                <p
+                  class="text-lg font-medium group-hover:text-c2 transition-colors"
+                >
+                  Why Attention?
+                </p>
+                <p class="text-sm text-muted mt-1">
+                  The fixed-vector bottleneck, and the idea of letting a model look things up instead of memorising.
+                </p>
+              </div>
+            </div>
+          </a>
+
+          <hr class="border-gray-100 dark:border-gray-800" />
+
+          <a href="topics/database_analogy.html" class="block group">
+            <div class="flex items-baseline gap-4">
+              <span class="text-sm text-c2 font-medium">02</span>
+              <div>
+                <p
+                  class="text-lg font-medium group-hover:text-c2 transition-colors"
+                >
+                  The Database Analogy
+                </p>
+                <p class="text-sm text-muted mt-1">
+                  Queries, keys, and values: a soft dictionary lookup where every entry is allowed to answer a little.
+                </p>
+              </div>
+            </div>
+          </a>
+
+          <hr class="border-gray-100 dark:border-gray-800" />
+
+          <a href="topics/similarity.html" class="block group">
+            <div class="flex items-baseline gap-4">
+              <span class="text-sm text-c2 font-medium">03</span>
+              <div>
+                <p
+                  class="text-lg font-medium group-hover:text-c2 transition-colors"
+                >
+                  Measuring Similarity
+                </p>
+                <p class="text-sm text-muted mt-1">
+                  Dot products, projections, and what it actually means for a key to match a query.
+                </p>
+              </div>
+            </div>
+          </a>
+
+          <hr class="border-gray-100 dark:border-gray-800" />
+
+          <a href="topics/softmax_weights.html" class="block group">
+            <div class="flex items-baseline gap-4">
+              <span class="text-sm text-c2 font-medium">04</span>
+              <div>
+                <p
+                  class="text-lg font-medium group-hover:text-c2 transition-colors"
+                >
+                  From Scores to Weights
+                </p>
+                <p class="text-sm text-muted mt-1">
+                  Softmax, sharpness, and why we divide the scores by the square root of the key dimension.
+                </p>
+              </div>
+            </div>
+          </a>
+
+          <hr class="border-gray-100 dark:border-gray-800" />
+
+          <a href="topics/scaled_dot_product.html" class="block group">
+            <div class="flex items-baseline gap-4">
+              <span class="text-sm text-c2 font-medium">05</span>
+              <div>
+                <p
+                  class="text-lg font-medium group-hover:text-c2 transition-colors"
+                >
+                  Scaled Dot-Product Attention
+                </p>
+                <p class="text-sm text-muted mt-1">
+                  Assembling the full formula and reading it as a pipeline of three matrix multiplications.
+                </p>
+              </div>
+            </div>
+          </a>
+
+          <hr class="border-gray-100 dark:border-gray-800" />
+
+          <a href="topics/self_attention.html" class="block group">
+            <div class="flex items-baseline gap-4">
+              <span class="text-sm text-c2 font-medium">06</span>
+              <div>
+                <p
+                  class="text-lg font-medium group-hover:text-c2 transition-colors"
+                >
+                  Self-Attention
+                </p>
+                <p class="text-sm text-muted mt-1">
+                  When the queries, the keys, and the values are all learned projections of the same sequence.
+                </p>
+              </div>
+            </div>
+          </a>
+
+          <hr class="border-gray-100 dark:border-gray-800" />
+
+          <a href="topics/multi_head.html" class="block group">
+            <div class="flex items-baseline gap-4">
+              <span class="text-sm text-c2 font-medium">07</span>
+              <div>
+                <p
+                  class="text-lg font-medium group-hover:text-c2 transition-colors"
+                >
+                  Multi-Head Attention
+                </p>
+                <p class="text-sm text-muted mt-1">
+                  Many lookups in parallel, so that different heads can ask different questions of the same context.
+                </p>
+              </div>
+            </div>
+          </a>
+
+          <hr class="border-gray-100 dark:border-gray-800" />
+
+          <a href="topics/masking.html" class="block group">
+            <div class="flex items-baseline gap-4">
+              <span class="text-sm text-c2 font-medium">08</span>
+              <div>
+                <p
+                  class="text-lg font-medium group-hover:text-c2 transition-colors"
+                >
+                  Masking and Causality
+                </p>
+                <p class="text-sm text-muted mt-1">
+                  Padding masks, causal masks, and how we forbid a query from reading the future.
+                </p>
+              </div>
+            </div>
+          </a>
+
+          <hr class="border-gray-100 dark:border-gray-800" />
+
+          <a href="topics/positional.html" class="block group">
+            <div class="flex items-baseline gap-4">
+              <span class="text-sm text-c2 font-medium">09</span>
+              <div>
+                <p
+                  class="text-lg font-medium group-hover:text-c2 transition-colors"
+                >
+                  Positional Information
+                </p>
+                <p class="text-sm text-muted mt-1">
+                  Attention cannot see order on its own: sinusoidal encodings, learned embeddings, and rotary positions.
+                </p>
+              </div>
+            </div>
+          </a>
+
+          <hr class="border-gray-100 dark:border-gray-800" />
+
+          <a href="topics/transformer_block.html" class="block group">
+            <div class="flex items-baseline gap-4">
+              <span class="text-sm text-c2 font-medium">10</span>
+              <div>
+                <p
+                  class="text-lg font-medium group-hover:text-c2 transition-colors"
+                >
+                  The Transformer Block
+                </p>
+                <p class="text-sm text-muted mt-1">
+                  The residual stream, layer normalisation, and the feed-forward layer that surrounds attention.
+                </p>
+              </div>
+            </div>
+          </a>
+
+          <hr class="border-gray-100 dark:border-gray-800" />
+
+          <a href="topics/complexity.html" class="block group">
+            <div class="flex items-baseline gap-4">
+              <span class="text-sm text-c2 font-medium">11</span>
+              <div>
+                <p
+                  class="text-lg font-medium group-hover:text-c2 transition-colors"
+                >
+                  The Cost of Looking Everywhere
+                </p>
+                <p class="text-sm text-muted mt-1">
+                  Quadratic complexity, the KV cache, and what linear and flash attention really change.
+                </p>
+              </div>
+            </div>
+          </a>
+
+          <hr class="border-gray-100 dark:border-gray-800" />
+
+          <a href="topics/time_series.html" class="block group">
+            <div class="flex items-baseline gap-4">
+              <span class="text-sm text-c2 font-medium">12</span>
+              <div>
+                <p
+                  class="text-lg font-medium group-hover:text-c2 transition-colors"
+                >
+                  Attention for Time Series
+                </p>
+                <p class="text-sm text-muted mt-1">
+                  Why forecasting is a retrieval problem, and what breaks when tokens become timestamps.
+                </p>
+              </div>
+            </div>
+          </a>
+
+          <hr class="border-gray-100 dark:border-gray-800" />
+
+          <a href="topics/patching.html" class="block group">
+            <div class="flex items-baseline gap-4">
+              <span class="text-sm text-c2 font-medium">13</span>
+              <div>
+                <p
+                  class="text-lg font-medium group-hover:text-c2 transition-colors"
+                >
+                  Patching and Channel Independence
+                </p>
+                <p class="text-sm text-muted mt-1">
+                  Turning a long signal into a short sequence of patches that attention can afford to read.
+                </p>
+              </div>
+            </div>
+          </a>
+
+          <hr class="border-gray-100 dark:border-gray-800" />
+
+          <a href="topics/forecaster.html" class="block group">
+            <div class="flex items-baseline gap-4">
+              <span class="text-sm text-c2 font-medium">14</span>
+              <div>
+                <p
+                  class="text-lg font-medium group-hover:text-c2 transition-colors"
+                >
+                  Building a Forecaster
+                </p>
+                <p class="text-sm text-muted mt-1">
+                  An end-to-end patch attention model on a real series, from the data loader to the attention map.
+                </p>
+              </div>
+            </div>
+          </a>
+
+          <hr class="border-gray-100 dark:border-gray-800" />
+
+          <a href="topics/reading_maps.html" class="block group">
+            <div class="flex items-baseline gap-4">
+              <span class="text-sm text-c2 font-medium">15</span>
+              <div>
+                <p
+                  class="text-lg font-medium group-hover:text-c2 transition-colors"
+                >
+                  Reading Attention Maps
+                </p>
+                <p class="text-sm text-muted mt-1">
+                  What the weights do and do not tell you, and when a linear baseline still wins.
+                </p>
+              </div>
+            </div>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="border-t border-gray-100 dark:border-gray-800 py-8 px-6">
+      <div class="max-w-2xl mx-auto text-sm text-muted">
+        <p>Queries, Keys, and Values</p>
+      </div>
+    </footer>
+  </body>
+</html>

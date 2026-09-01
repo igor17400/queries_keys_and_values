@@ -1,0 +1,107 @@
+/* ==========================================================================
+   Palette
+   c1  #15173D  deep navy      structural emphasis, headings, dark ground
+   c2  #982598  magenta        strongest highlight, links on hover
+   c3  #E491C9  pink           medium highlight, accents, eyebrows
+   c4  #F1E9E9  warm off-white softest highlight, panels, text on dark ground
+   ========================================================================== */
+
+/* Highlight markers, ordered by emphasis: c2 > c3 > c1 > c4 */
+.hl-c1 {
+  background: linear-gradient(180deg, transparent 10%, rgba(21, 23, 61, 0.14) 40%, rgba(21, 23, 61, 0.14) 85%, transparent 85%) !important;
+  padding: 0.05em 0.15em !important;
+}
+.hl-c2 {
+  background: linear-gradient(180deg, transparent 10%, rgba(152, 37, 152, 0.18) 40%, rgba(152, 37, 152, 0.18) 85%, transparent 85%) !important;
+  padding: 0.05em 0.15em !important;
+}
+.hl-c3 {
+  background: linear-gradient(180deg, transparent 10%, rgba(228, 145, 201, 0.28) 40%, rgba(228, 145, 201, 0.28) 85%, transparent 85%) !important;
+  padding: 0.05em 0.15em !important;
+}
+/* c4 is nearly white, so on light backgrounds it reads as a soft warm band
+   rather than a colour wash. Lowest emphasis in the ladder. */
+.hl-c4 {
+  background: linear-gradient(180deg, transparent 10%, #F1E9E9 40%, #F1E9E9 85%, transparent 85%) !important;
+  box-shadow: inset 0 -2px 0 rgba(228, 145, 201, 0.45) !important;
+  padding: 0.05em 0.15em !important;
+}
+
+/* Dark mode: more opacity, and c4 inverts to a faint light wash */
+.dark .hl-c1 { background: linear-gradient(180deg, transparent 10%, rgba(93, 99, 209, 0.32) 10%, rgba(93, 99, 209, 0.32) 85%, transparent 85%) !important; }
+.dark .hl-c2 { background: linear-gradient(180deg, transparent 10%, rgba(152, 37, 152, 0.45) 10%, rgba(152, 37, 152, 0.45) 85%, transparent 85%) !important; }
+.dark .hl-c3 { background: linear-gradient(180deg, transparent 10%, rgba(228, 145, 201, 0.32) 10%, rgba(228, 145, 201, 0.32) 85%, transparent 85%) !important; }
+.dark .hl-c4 {
+  background: linear-gradient(180deg, transparent 10%, rgba(241, 233, 233, 0.14) 10%, rgba(241, 233, 233, 0.14) 85%, transparent 85%) !important;
+  box-shadow: inset 0 -2px 0 rgba(228, 145, 201, 0.5) !important;
+}
+
+/* Dark mode: MathJax text colour */
+.dark mjx-container { color: #e5e7eb !important; }
+
+/* Panel: the natural home for c4, used for asides and worked examples */
+.panel-c4 {
+  background: #F1E9E9;
+  border: 1px solid rgba(228, 145, 201, 0.45);
+}
+.dark .panel-c4 {
+  background: rgba(241, 233, 233, 0.06);
+  border-color: rgba(228, 145, 201, 0.25);
+}
+
+/* Cover.
+   The grid and the gradient are both background-images, so they must live in a
+   single declaration. Splitting them across two rules makes the later one
+   silently erase the earlier one. */
+.gradient-bg {
+  background-image: linear-gradient(
+    135deg,
+    #15173d 0%,
+    #2b1f5c 22%,
+    #982598 52%,
+    #e491c9 82%,
+    #f1e9e9 100%
+  );
+  background-size: cover;
+}
+.cover-grid {
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+  background-size: 60px 60px;
+}
+.gradient-bg.cover-grid {
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(
+      135deg,
+      #15173d 0%,
+      #2b1f5c 22%,
+      #982598 52%,
+      #e491c9 82%,
+      #f1e9e9 100%
+    );
+  background-size:
+    60px 60px,
+    60px 60px,
+    cover;
+}
+.glow-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.4;
+}
+
+/* Attention-matrix helper: a square heat cell grid used in a few pages
+   where a TikZ figure would be overkill. */
+.attn-grid {
+  display: grid;
+  gap: 2px;
+}
+.attn-cell {
+  aspect-ratio: 1 / 1;
+  border-radius: 3px;
+  background: #982598;
+}
