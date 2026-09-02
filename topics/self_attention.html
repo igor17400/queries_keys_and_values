@@ -285,21 +285,217 @@
             same thing, both equal to $XW$, and the score matrix becomes
             $$QK^\top = (XW)(XW)^\top$$ which is symmetric. Entry $(i,j)$ equals
             entry $(j,i)$, always. Sharing the matrix would force how much
-            "chased" attends to "mouse"" to be exactly how much "mouse" attends
-            to "chased"", for every sentence, at every point in training, with
-            no way for the model to escape it. Language is not built that way. A
-            verb needs its object far more than the object needs the verb, and a
-            pronoun needs its antecedent far more than the antecedent needs the
-            pronoun.
+            "chased" attends to "mouse" to be <b>exactly how much</b> "mouse"
+            attends to "chased"", for every sentence, at every point in
+            training, with no way for the model to escape it. Language is not
+            built that way. A verb needs its object far more than the object
+            needs the verb, and a pronoun needs its antecedent far more than the
+            antecedent needs the pronoun.
           </p>
-          <!-- TO WRITE: the coreference example on the longer sentence, "the
-               cat chased the mouse because it was hungry", where resolving
-               "it" is the thing attention has to get right.
-               Figure: self_attention_sentence, one word's weights drawn as arcs
-               of varying thickness over the sentence.
-               Then the closing hook into section 07: one set of three matrices
-               can only learn one kind of question, and a word usually needs to
-               ask several at once. -->
+        </section>
+        <section>
+          <h2 class="text-2xl font-semibold text-ink dark:text-white mb-4">
+            The questions being asked
+          </h2>
+          <p>
+            The projections don't only remix the numbers, they also change the
+            width. $X$ arrives $d_{\text{model}}$ wide and the queries and keys
+            leave $d_k$ wide, usually with $d_{\text{model}} > d_k$. It's
+            important to note that we are the ones who choose those dimensions.
+            They are not learned. We fix $d_k$ and $d_v$ when we design the
+            model, and training then fills the matrices of that size with
+            whatever numbers turn out to work.
+          </p>
+
+          <p class="mt-4">
+            Which raises the question this section is named after. If we choose
+            the sizes and training chooses the contents, what exactly does a
+            word end up asking? Remember that a query is a vector, and
+            <span class="hl-c2"
+              >$W_Q$ is the thing that turns a word into a question</span
+            >. So the question a word asks is not written by anybody. It is
+            whatever direction $W_Q$ happens to send that word's embedding in,
+            after a great deal of training.
+          </p>
+          <p class="mt-4">
+            Let's go back to our sentence world,
+            <em>the cat chased the mouse because it was hungry</em>. To make any
+            sense of that, something has to work out that the word
+            <em>it</em> refers to the <em>cat</em> rather than to the
+            <em>mouse</em>. And a very interesting part of this (at least for
+            me) is that nobody writes that rule down. The query belonging to
+            <em>it</em> is whatever $W_Q$ produces from its embedding, and if
+            attending to the <em>cat</em> happens to help the model predict
+            better, gradient descent nudges $W_Q$ until that query scores highly
+            against cat's key. The rule is never stated anywhere. It is only
+            ever the residue of many small corrections.
+          </p>
+        </section>
+
+        <section>
+          <h2 class="text-2xl font-semibold text-ink dark:text-white mb-4">
+            Seeing it run
+          </h2>
+          <p>
+            The four steps of the breakdown figure are four lines of the
+            function, and the comments below mark which is which.
+          </p>
+
+          <div
+            class="my-8 rounded-xl overflow-hidden border border-gray-300 dark:border-gray-700 shadow-lg"
+          >
+            <div class="bg-[#ebdbb2] px-4 py-2 flex items-center gap-2">
+              <span class="w-3 h-3 rounded-full bg-[#cc241d]"></span>
+              <span class="w-3 h-3 rounded-full bg-[#d79921]"></span>
+              <span class="w-3 h-3 rounded-full bg-[#98971a]"></span>
+              <span class="ml-3 text-xs text-[#7c6f64] font-mono"
+                >self_attention.py</span
+              >
+            </div>
+            <pre
+              class="!m-0 !p-0 text-sm font-mono leading-relaxed overflow-x-auto"
+            ><code class="language-python p-5 block">def attention(X, W_q, W_k, W_v):
+    """One head of self-attention. Returns the output and the weights."""
+    # (a) project the same X three ways
+    Q = X @ W_q
+    K = X @ W_k
+    V = X @ W_v
+
+    # (b) every query against every key
+    scores = Q @ K.transpose(-2, -1)
+
+    # (c) scale, then softmax along each row on its own
+    d_k = Q.shape[-1]
+    weights = torch.softmax(scores / d_k**0.5, dim=-1)
+
+    # (d) blend the values
+    return weights @ V, weights
+</code></pre>
+          </div>
+
+          <h3 class="text-xl font-semibold text-ink dark:text-white mt-10 mb-4">
+            Watching a head learn to be a dictionary
+          </h3>
+          <p>
+            The second script is the interesting one. We invent a task that
+            <span class="hl-c2">can only be solved by looking something up</span
+            >, and then we check whether a single attention head discovers how
+            to do it without being told.
+          </p>
+          <p class="mt-4">Each training example is a tiny store:</p>
+          <ul class="mt-3 ml-6 space-y-3 list-disc text-[18px]">
+            <li>
+              Four <strong>entries</strong>, each one a pair: a tag and a value.
+              Something like tag 0 holds value 3, tag 2 holds value 5, and so
+              on. Both are just small integers.
+            </li>
+            <li>
+              One <strong>query tag</strong>, picked from the four tags present.
+            </li>
+            <li>
+              The model has to output the value that belongs to that tag. The
+              store is different in every example, so nothing can be memorised.
+            </li>
+          </ul>
+          <p class="mt-4">
+            The important detail is how an entry is handed to the model. Each
+            entry is a <em>single token</em>, and its embedding is the tag's
+            embedding plus the value's embedding added together. The query is a
+            token holding only a tag embedding. So the head is given five
+            tokens, four entries and a query, and a loss that only ever mentions
+            the final answer.
+          </p>
+          <p class="mt-4">
+            Nothing tells it which part of a token is a tag and which part is a
+            value. For this to work, $W_K$ has to learn to read the tag half of
+            an entry, so that keys are things a tag can match against, while
+            $W_V$ has to learn to read the value half, so that what gets blended
+            is the answer rather than the label.
+            <span class="hl-c2"
+              >The split between keys and values is not built in. It has to be
+              discovered</span
+            >.
+          </p>
+
+          <div
+            class="my-8 rounded-xl overflow-hidden border border-gray-300 dark:border-gray-700 shadow-lg"
+          >
+            <div class="bg-[#ebdbb2] px-4 py-2 flex items-center gap-2">
+              <span class="w-3 h-3 rounded-full bg-[#cc241d]"></span>
+              <span class="w-3 h-3 rounded-full bg-[#d79921]"></span>
+              <span class="w-3 h-3 rounded-full bg-[#98971a]"></span>
+              <span class="ml-3 text-xs text-[#7c6f64] font-mono"
+                >learned_lookup.py</span
+              >
+            </div>
+            <pre
+              class="!m-0 !p-0 text-sm font-mono leading-relaxed overflow-x-auto"
+            ><code class="language-python p-5 block">class OneHead(nn.Module):
+    def __init__(self):
+        super().__init__()
+        # an entry is one token carrying both its tag and its value
+        self.tag_emb = nn.Embedding(N_TAGS, D_MODEL)
+        self.value_emb = nn.Embedding(N_VALUES, D_MODEL)
+        self.W_q = nn.Linear(D_MODEL, D_K, bias=False)
+        self.W_k = nn.Linear(D_MODEL, D_K, bias=False)
+        self.W_v = nn.Linear(D_MODEL, D_K, bias=False)
+        self.readout = nn.Linear(D_K, N_VALUES)
+
+    def forward(self, tags, values, query_tag):
+        entries = self.tag_emb(tags) + self.value_emb(values)
+        query = self.tag_emb(query_tag).unsqueeze(1)
+        X = torch.cat([entries, query], dim=1)
+
+        Q, K, V = self.W_q(X), self.W_k(X), self.W_v(X)
+        weights = torch.softmax(Q @ K.transpose(-2, -1) / D_K**0.5, dim=-1)
+        answer = (weights @ V)[:, -1]        # the query's row of the output
+        return self.readout(answer), weights
+</code></pre>
+          </div>
+
+          <p class="mt-4">
+            We watch one fixed example while the model trains, printing the
+            query's row of the attention matrix. In that example the store is
+            tags <code class="text-c2">[0, 2, 1, 3]</code> with values
+            <code class="text-c2">[3, 5, 5, 1]</code>, and the query is tag 2,
+            so the answer lives in entry 1.
+          </p>
+
+          <div
+            class="my-8 rounded-xl overflow-hidden border border-gray-300 dark:border-gray-700 shadow-lg"
+          >
+            <div class="bg-[#ebdbb2] px-4 py-2 flex items-center gap-2">
+              <span class="w-3 h-3 rounded-full bg-[#cc241d]"></span>
+              <span class="w-3 h-3 rounded-full bg-[#d79921]"></span>
+              <span class="w-3 h-3 rounded-full bg-[#98971a]"></span>
+              <span class="ml-3 text-xs text-[#7c6f64] font-mono">output</span>
+            </div>
+            <pre
+              class="!m-0 !p-0 text-sm font-mono leading-relaxed overflow-x-auto"
+            ><code class="language-text p-5 block">store:  tags [0, 2, 1, 3]  values [3, 5, 5, 1]
+query:  tag 2  ->  entry 1, value 5
+
+ step    loss    acc   e0  e1  e2  e3  self
+    0   1.800   0.20   .29  .25  .20  .09  .18
+   10   1.628   0.51   .12  .47  .07  .03  .32
+   25   1.047   0.80   .00  .73  .00  .00  .26
+   50   0.059   1.00   .00  .89  .00  .00  .11
+  100   0.002   1.00   .00  .95  .00  .00  .05
+  400   0.000   1.00   .00  .98  .00  .00  .02
+</code></pre>
+          </div>
+
+          <p class="mt-4">
+            At step 0 the attention is close to uniform: the head has no idea
+            where to look, which is what random $W_Q$ and $W_K$ buy you. By step
+            25 it is putting 0.73 on entry 1, and by the end 0.98, with accuracy
+            at 100 per cent.
+            <span class="hl-c2"
+              >It has become a dictionary, and nobody told it how</span
+            >. This is the same soft lookup we described back in section 02,
+            except that this time it was learned from nothing but examples and a
+            loss.
+          </p>
         </section>
       </div>
 

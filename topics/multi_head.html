@@ -68,17 +68,75 @@
           Multi-Head Attention
         </h1>
         <p class="text-lg text-muted leading-relaxed">
-          Many lookups in parallel, so that different heads can ask different questions of the same context.
+          Many lookups in parallel, so that different heads can ask different
+          questions of the same context.
         </p>
       </header>
 
       <div
         class="space-y-12 text-gray-700 dark:text-gray-300 leading-relaxed text-[18px]"
       >
-        <!-- TODO: written together. See figures/FIGURE_PLAN.md for the
-             schematics planned for this section. -->
         <section>
-          <p class="text-muted italic">Not written yet.</p>
+          <p>
+            The previous section closed the loop for the attention idea. The
+            sentence arrives as $X$, three learned matrices turn it into $Q$,
+            $K$ and $V$, and every word walks away with a new representation
+            built out of the whole sentence. Nothing in the mechanism is left
+            undefined any more. Look at what one word actually receives, though:
+            one row of weights, one distribution over the five words, one blend.
+            <span class="hl-c2">One word, one question, one answer</span>, and
+            it is not obvious that one is enough.
+          </p>
+
+          <p class="mt-4">
+            Let's take the word <em>chased</em> from our sentence
+            <em>The cat chased the mouse</em>. Its row of weights came out to be
+            0.04, 0.18, 0.12, 0.06 and 0.60, and reading that row as a set of
+            relations is enough to spot a problem. A verb eeds its object, and
+            <em>mouse</em> takes 0.60 of the row. A verb also needs its subject,
+            and <em>cat</em> is left with 0.18. The row is a softmax, so it sums
+            to one whatever happens, which means
+            <b
+              >every point of weight spent on the object is a point not spent on
+              the subject</b
+            >. What <em>chased</em> receives is a single blend of two different
+            relations. One relation is served well, the other not eally, and
+            both in the same vector.
+          </p>
+          <p class="mt-4">
+            The obvious direction would be to give th emodel more room and make
+            $d_k$ large, so the query has space to encode the subject relation
+            and the object relation at the same time. It does not here, and the
+            reason is not capacity. However wide $q$ and $k$ become, the dot
+            product still collapses to one number per pair, and what comes out
+            is still one row. One possible solution would be to drop softmax and
+            let the row stop summing to one, but we've seen that without
+            normalisation there are no proportions left to blend in.
+          </p>
+        </section>
+
+        <section>
+          <h2 class="text-2xl font-semibold text-ink dark:text-white mb-4">
+            Run the lookup more than once
+          </h2>
+          <p>
+            If one lookup produces one distribution, then
+            <span class="hl-c2">two distributions ask for two lookups</span>.
+            That is the whole idea, and it is as blunt as it sounds. We change
+            nothing inside the mechanism of
+            <a
+              href="scaled_dot_product.html"
+              class="text-c2 hover:text-c3 transition-colors"
+              >section 05</a
+            >. We run it more than once over the same sentence, each run with
+            its own $W_Q$, $W_K$ and $W_V$. Every run scores its own queries
+            against its own keys, takes its own softmax, and hands
+            <em>chased</em> its own row of weights. Two runs, two budgets, and
+            now one of them can spend most of its weight on <em>cat</em> while
+            the other spends most of its weight on <em>mouse</em>, with neither
+            paying for the other. Each of these parallel runs is called a
+            <strong>head</strong>.
+          </p>
         </section>
       </div>
 
