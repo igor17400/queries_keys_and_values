@@ -3,7 +3,9 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Scaled Dot-Product Attention &mdash; Queries, Keys, and Values</title>
+    <title>
+      Scaled Dot-Product Attention &mdash; Queries, Keys, and Values
+    </title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
       tailwind.config = {
@@ -68,17 +70,101 @@
           Scaled Dot-Product Attention
         </h1>
         <p class="text-lg text-muted leading-relaxed">
-          Assembling the full formula and reading it as a pipeline of three matrix multiplications.
+          A pipeline of three matrix multiplications.
         </p>
       </header>
 
       <div
         class="space-y-12 text-gray-700 dark:text-gray-300 leading-relaxed text-[17px]"
       >
-        <!-- TODO: written together. See figures/FIGURE_PLAN.md for the
-             schematics planned for this section. -->
         <section>
-          <p class="text-muted italic">Not written yet.</p>
+          <h2 class="text-2xl font-semibold text-ink dark:text-white mb-4">
+            Every query against every key
+          </h2>
+          <p>
+            Let's now see how to stack everything we have talked about so far.
+            Take the queries and lay them out as the rows of a matrix $Q$, then
+            do the same with the keys to get $K$. If our sentence has five words
+            and each one asks its own question, that is five queries and five
+            keys, so there are twenty-five query-key pairs waiting to be scored.
+          </p>
+
+          <p class="mt-4">
+            A single matrix product computes all of them at once:
+            <span class="hl-c2"
+              >$QK^{\top}$ is a five by five table whose entry in row $i$,
+              column $j$ is exactly $q_i \cdot k_j$</span
+            >. Every dot product from the last two sections, done with matrices
+            (guess what, if you hadn't realised it so far, matrices are
+            important after all).
+          </p>
+
+          <figure class="my-10 flex flex-col items-center">
+            <img
+              src="../figures/build/matrix_shapes.svg"
+              alt="A five by three matrix Q multiplied by a three by five matrix K transpose, giving a five by five matrix of scores. Row two of Q and column four of K transpose are highlighted, together producing the highlighted entry of the result."
+              class="w-full max-w-2xl"
+            />
+            <figcaption class="mt-3 text-sm text-muted text-center max-w-xl">
+              Every row of $Q$ "meets" every column of $K^{\top}$ and produces
+              one entry of the result.
+            </figcaption>
+          </figure>
+
+          <p class="mt-4">
+            Remember the sentence we started with,
+            <em>the cat chased the mouse</em>. Five words, so five rows in the
+            figure above. Up to now there has been exactly one query, the one we
+            wrote by hand: <em>what did the cat chase?</em> From here, every
+            word carries its own.
+          </p>
+
+          <p class="mt-4">
+            So what is a word actually asking? Nothing you could write down as a
+            sentence.
+            <span class="hl-c2">A query is a vector, not English</span>, and
+            nobody hands the model a list of questions. It learns whatever
+            directions happen to help. What we can do is describe how a query
+            <em>behaves</em>. Take word <strong>(3)</strong> <em>chased</em>. It
+            is a verb missing its object, and a query that scores highly against
+            <em>mouse</em> behaves like the question we have been using all
+            along. Our hand-written query was standing in for word 3's the whole
+            time. The difference now is that the other four words get one too.
+          </p>
+
+          <p class="mt-4">Concretely, in the figure above:</p>
+          <ul class="mt-3 ml-6 space-y-3 list-disc text-[17px]">
+            <li>
+              <strong>Query</strong> &rarr; a row of $Q$. Row $i$ is the
+              question word $i$ is asking, and there are five of them because
+              there are five words.
+            </li>
+            <li>
+              <strong>Key</strong> &rarr; a column of $K^{\top}$, which is the
+              same thing as a row of $K$. Column $j$ is the label word $j$ wears
+              so it can be found.
+            </li>
+            <li>
+              <strong>Score</strong> &rarr; an entry of $QK^{\top}$. The entry
+              in row $i$, column $j$ is how well word $i$'s query matches word
+              $j$'s key.
+            </li>
+          </ul>
+
+          <p class="mt-4">
+            That explains the shading. The darker cell on its own is a single
+            score, $q_2 \cdot k_4$: word 2's query against word 4's key, one dot
+            product of the kind we spent the last two sections on. The shaded
+            row it sits in is
+            <span class="hl-c2"
+              >all five scores for word 2's query, its match against every word
+              in the sentence including itself</span
+            >. That row is exactly the list of five numbers we ended section 03
+            with, and every other row of the matrix is the same list for a
+            different word.
+          </p>
+
+          <p class="mt-4"></p>
         </section>
       </div>
 
@@ -86,8 +172,16 @@
       <nav
         class="mt-20 pt-8 border-t border-gray-200 dark:border-gray-800 flex justify-between text-sm"
       >
-        <a href="softmax_weights.html" class="text-muted hover:text-c2 transition-colors">&larr; From Scores to Weights</a>
-        <a href="self_attention.html" class="text-muted hover:text-c2 transition-colors">Self-Attention &rarr;</a>
+        <a
+          href="softmax_weights.html"
+          class="text-muted hover:text-c2 transition-colors"
+          >&larr; From Scores to Weights</a
+        >
+        <a
+          href="self_attention.html"
+          class="text-muted hover:text-c2 transition-colors"
+          >Self-Attention &rarr;</a
+        >
       </nav>
     </article>
   </body>
