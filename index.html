@@ -69,7 +69,7 @@
           class="text-lg md:text-xl text-white/85 leading-relaxed max-w-2xl mx-auto mb-16"
           style="text-shadow: 0 1px 12px rgba(21, 23, 61, 0.3)"
         >
-          Understand the database-like retrieval mechanism that lets a model
+          Understand the retrieval mechanism that lets a model
           <br /><em>search its own context</em><br />for the features it
           actually needs.
         </p>
@@ -119,7 +119,8 @@
                   Why Attention?
                 </p>
                 <p class="text-sm text-muted mt-1">
-                  The fixed-vector bottleneck, and the idea of letting a model look things up instead of memorising.
+                  The fixed-vector bottleneck, and the idea of letting a model
+                  look things up instead of memorising.
                 </p>
               </div>
             </div>
@@ -137,7 +138,8 @@
                   The Dictionary Analogy
                 </p>
                 <p class="text-sm text-muted mt-1">
-                  Queries, keys, and values: a soft dictionary lookup where every entry is allowed to answer a little.
+                  Queries, keys, and values: a soft dictionary lookup where
+                  every entry is allowed to answer a little.
                 </p>
               </div>
             </div>
@@ -155,7 +157,8 @@
                   Measuring Similarity
                 </p>
                 <p class="text-sm text-muted mt-1">
-                  Dot products, projections, and what it actually means for a key to match a query.
+                  Dot products, projections, and what it actually means for a
+                  key to match a query.
                 </p>
               </div>
             </div>
@@ -173,7 +176,8 @@
                   From Scores to Weights
                 </p>
                 <p class="text-sm text-muted mt-1">
-                  Softmax, sharpness, and why we divide the scores by the square root of the key dimension.
+                  Softmax, sharpness, and why we divide the scores by the square
+                  root of the key dimension.
                 </p>
               </div>
             </div>
@@ -191,7 +195,8 @@
                   Scaled Dot-Product Attention
                 </p>
                 <p class="text-sm text-muted mt-1">
-                  Assembling the full formula and reading it as a pipeline of three matrix multiplications.
+                  Assembling the full formula and reading it as a pipeline of
+                  three matrix multiplications.
                 </p>
               </div>
             </div>
@@ -209,7 +214,8 @@
                   Self-Attention
                 </p>
                 <p class="text-sm text-muted mt-1">
-                  When the queries, the keys, and the values are all learned projections of the same sequence.
+                  When the queries, the keys, and the values are all learned
+                  projections of the same sequence.
                 </p>
               </div>
             </div>
@@ -227,7 +233,8 @@
                   Multi-Head Attention
                 </p>
                 <p class="text-sm text-muted mt-1">
-                  Many lookups in parallel, so that different heads can ask different questions of the same context.
+                  Many lookups in parallel, so that different heads can ask
+                  different questions of the same context.
                 </p>
               </div>
             </div>
@@ -245,7 +252,8 @@
                   Masking and Causality
                 </p>
                 <p class="text-sm text-muted mt-1">
-                  Padding masks, causal masks, and how we forbid a query from reading the future.
+                  Padding masks, causal masks, and how we forbid a query from
+                  reading the future.
                 </p>
               </div>
             </div>
@@ -263,7 +271,8 @@
                   Positional Information
                 </p>
                 <p class="text-sm text-muted mt-1">
-                  Attention cannot see order on its own: sinusoidal encodings, learned embeddings, and rotary positions.
+                  Attention cannot see order on its own: sinusoidal encodings,
+                  learned embeddings, and rotary positions.
                 </p>
               </div>
             </div>
@@ -281,7 +290,8 @@
                   The Transformer Block
                 </p>
                 <p class="text-sm text-muted mt-1">
-                  The residual stream, layer normalisation, and the feed-forward layer that surrounds attention.
+                  The residual stream, layer normalisation, and the feed-forward
+                  layer that surrounds attention.
                 </p>
               </div>
             </div>
@@ -299,7 +309,8 @@
                   The Cost of Looking Everywhere
                 </p>
                 <p class="text-sm text-muted mt-1">
-                  Quadratic complexity, the KV cache, and what linear and flash attention really change.
+                  Quadratic complexity, the KV cache, and what linear and flash
+                  attention really change.
                 </p>
               </div>
             </div>
@@ -317,7 +328,8 @@
                   Attention for Time Series
                 </p>
                 <p class="text-sm text-muted mt-1">
-                  Why forecasting is a retrieval problem, and what breaks when tokens become timestamps.
+                  Why forecasting is a retrieval problem, and what breaks when
+                  tokens become timestamps.
                 </p>
               </div>
             </div>
@@ -335,7 +347,8 @@
                   Patching and Channel Independence
                 </p>
                 <p class="text-sm text-muted mt-1">
-                  Turning a long signal into a short sequence of patches that attention can afford to read.
+                  Turning a long signal into a short sequence of patches that
+                  attention can afford to read.
                 </p>
               </div>
             </div>
@@ -353,7 +366,8 @@
                   Building a Forecaster
                 </p>
                 <p class="text-sm text-muted mt-1">
-                  An end-to-end patch attention model on a real series, from the data loader to the attention map.
+                  An end-to-end patch attention model on a real series, from the
+                  data loader to the attention map.
                 </p>
               </div>
             </div>
@@ -371,7 +385,8 @@
                   Reading Attention Maps
                 </p>
                 <p class="text-sm text-muted mt-1">
-                  What the weights do and do not tell you, and when a linear baseline still wins.
+                  What the weights do and do not tell you, and when a linear
+                  baseline still wins.
                 </p>
               </div>
             </div>

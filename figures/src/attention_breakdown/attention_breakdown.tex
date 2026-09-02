@@ -1,0 +1,189 @@
+\documentclass[tikz,border=12pt]{standalone}
+\usetikzlibrary{arrows.meta, positioning, calc, decorations.pathreplacing, fit}
+\usepackage{amsmath}
+\usepackage{amssymb}
+
+\begin{document}
+\begin{tikzpicture}[
+    every node/.style={font=\sffamily},
+]
+
+\definecolor{c1}{HTML}{15173D}
+\definecolor{c2}{HTML}{982598}
+\definecolor{c3}{HTML}{E491C9}
+\definecolor{c4}{HTML}{F1E9E9}
+\definecolor{axiscolor}{HTML}{333333}
+\definecolor{labelcolor}{HTML}{6B6472}
+\definecolor{gradcolor}{HTML}{B00020}
+
+% ================================================================
+% VISUAL GRAMMAR
+%   computed tensor : thin outline, tinted fill   (rebuilt every pass)
+%   learned matrix  : thick outline + corner dot  (changed by training)
+%
+% VERTICAL PLAN, top to bottom. Rows inside a panel are 1.35 apart so the
+% boxes (1.05 tall) never touch. Each rule is a short mark in the left
+% margin, with clear air between it and anything else.
+%   legend head 18.7   legend row 17.4
+%   rule 16.2   (a) title 15.5   rows 14.0 / 12.65 / 11.3
+%   rule 10.1   (b) title  9.4   row   8.2
+%   rule  7.1   (c) title  6.4   row   5.2
+%   rule  4.1   (d) title  3.4   row   2.2
+%   rule  1.1   (e) title  0.4   row  -0.8
+% ================================================================
+
+\def\ruleL{2.15}    % rules are centred marks, not full-width lines
+\def\ruleEnd{6.65}
+\def\stepX{-2.95}
+\def\panelX{-2.4}
+
+\tikzset{
+  tens/.style 2 args={
+    draw=#1, line width=0.7pt, fill=#1, fill opacity=0.13, text opacity=1,
+    rounded corners=3pt, minimum width=#2, minimum height=1.05cm,
+    font=\sffamily\large, text=#1,
+  },
+  learn/.style={
+    draw=axiscolor, line width=1.5pt, fill=c4, text opacity=1,
+    rounded corners=3pt, minimum width=1.65cm, minimum height=1.05cm,
+    font=\sffamily\large, text=axiscolor,
+  },
+  op/.style={font=\sffamily\large, text=axiscolor},
+  arr/.style={-{Stealth[length=5pt]}, line width=0.9pt, labelcolor,
+              opacity=0.85},
+  shp/.style={font=\sffamily, text=axiscolor},
+  note/.style={font=\sffamily, text=axiscolor, anchor=west, align=left},
+  step/.style={font=\sffamily\large\bfseries, text=axiscolor, anchor=west},
+  panel/.style={font=\sffamily\large\bfseries, text=c2, anchor=west},
+  sep/.style={labelcolor, opacity=0.45, line width=0.9pt},
+}
+
+\newcommand{\dotmark}[1]{\fill[axiscolor] ($(#1.north west)+(0.15,-0.15)$)
+    circle (0.06);}
+
+% ---------------------------------------------------------------- legend
+\node[font=\sffamily\large\bfseries, text=axiscolor, anchor=west]
+    at (\stepX, 18.7) {\underline{Legend}};
+
+\node[tens={labelcolor}{1.7cm}] (lg1) at (-1.5, 17.4) {tensor};
+\node[note] at (-0.4, 17.4) {computed: rebuilt for every sentence};
+\node[learn] (lg2) at (7.3, 17.4) {matrix};
+\dotmark{lg2}
+\node[note] at (8.35, 17.4) {learned: changed by training};
+
+% ================================================================
+% (a)
+% ================================================================
+\draw[sep] (\ruleL, 16.2) -- (\ruleEnd, 16.2);
+\node[step]  at (\stepX, 15.5) {(a)};
+\node[panel] at (\panelX, 15.5) {Project the sentence three ways};
+
+\node[tens={c1}{1.45cm}] (X) at (0.0, 12.65) {$X$};
+\node[shp, anchor=north] at (0.0, 11.95) {$n \times d_{\mathrm{model}}$};
+
+\node[learn] (WQ) at (3.0, 14.0)  {$W_Q$};  \dotmark{WQ}
+\node[learn] (WK) at (3.0, 12.65) {$W_K$};  \dotmark{WK}
+\node[learn] (WV) at (3.0, 11.3)  {$W_V$};  \dotmark{WV}
+
+\node[tens={c1}{1.25cm}] (Q) at (6.0, 14.0)  {$Q$};
+\node[tens={c2}{1.25cm}] (K) at (6.0, 12.65) {$K$};
+\node[tens={c3}{1.25cm}, text=c3!62!black] (V) at (6.0, 11.3) {$V$};
+\node[shp, anchor=west] at (6.8, 14.0)  {$n \times d_k$};
+\node[shp, anchor=west] at (6.8, 12.65) {$n \times d_k$};
+\node[shp, anchor=west] at (6.8, 11.3)  {$n \times d_v$};
+
+\node[draw=gradcolor, dashed, line width=1.0pt, rounded corners=6pt,
+      fit=(WQ)(WK)(WV), inner sep=7pt] (Wbox) {};
+
+\foreach \w/\o in {WQ/Q, WK/K, WV/V} {
+    \draw[arr] (X.east) -- (\w.west);
+    \draw[arr] (\w.east) -- (\o.west);
+}
+\node[note] at (9.3, 12.65) {every row of $X$ goes through\\the same matrix, on
+    its own};
+
+% ================================================================
+% (b)
+% ================================================================
+\draw[sep] (\ruleL, 10.1) -- (\ruleEnd, 10.1);
+\node[step]  at (\stepX, 9.4) {(b)};
+\node[panel] at (\panelX, 9.4) {Score every query against every key};
+
+\node[tens={c1}{1.25cm}] (Q2) at (0.0, 8.2) {$Q$};
+\node[op] at (1.4, 8.2) {$\times$};
+\node[tens={c2}{1.4cm}] (KT) at (2.9, 8.2) {$K^{\top}$};
+\node[op] at (4.4, 8.2) {$=$};
+\node[tens={c2}{1.9cm}] (S) at (6.2, 8.2) {scores};
+\node[shp, anchor=west] at (7.4, 8.2) {$n \times n$};
+\node[note] at (9.3, 8.2) {the first time information\\crosses between words};
+
+% ================================================================
+% (c)
+% ================================================================
+\draw[sep] (\ruleL, 7.1) -- (\ruleEnd, 7.1);
+\node[step]  at (\stepX, 6.4) {(c)};
+\node[panel] at (\panelX, 6.4) {Turn the scores into weights};
+
+\node[tens={c2}{1.9cm}] (S2) at (0.3, 4.9) {scores};
+\node[tens={c2}{1.9cm}] (S3) at (4.6, 4.9) {scaled};
+\node[tens={c2}{2.0cm}] (W)  at (8.9, 4.9) {weights};
+\draw[arr] (S2.east) -- (S3.west);
+\draw[arr] (S3.east) -- (W.west);
+\node[op, anchor=south] at (2.45, 5.15) {$\div \sqrt{d_k}$};
+\node[op, anchor=south] at (6.75, 5.15) {softmax};
+\node[shp, anchor=west] at (10.1, 4.9) {$n \times n$};
+\node[note] at (11.6, 4.9) {every row\\sums to 1};
+
+% ================================================================
+% (d)
+% ================================================================
+\draw[sep] (\ruleL, 3.8) -- (\ruleEnd, 3.8);
+\node[step]  at (\stepX, 3.1) {(d)};
+\node[panel] at (\panelX, 3.1) {Blend the values};
+
+\node[tens={c2}{2.0cm}] (W2) at (0.4, 1.9) {weights};
+\node[op] at (2.0, 1.9) {$\times$};
+\node[tens={c3}{1.25cm}, text=c3!62!black] (V2) at (3.4, 1.9) {$V$};
+\node[op] at (4.8, 1.9) {$=$};
+\node[tens={c3}{1.9cm}, text=c3!62!black] (O) at (6.5, 1.9) {output};
+\node[shp, anchor=west] at (7.7, 1.9) {$n \times d_v$};
+\node[note] at (9.3, 1.9) {one answer vector\\for every word};
+
+% ================================================================
+% (e)
+% ================================================================
+\draw[sep] (\ruleL, 0.8) -- (\ruleEnd, 0.8);
+\node[step]  at (\stepX, 0.1) {(e)};
+\node[panel] at (\panelX, 0.1) {Training changes the matrices, nothing else};
+
+\node[tens={c3}{1.9cm}, text=c3!62!black] (O2) at (6.5, -1.1) {output};
+\node[font=\sffamily\large, text=gradcolor] (L) at (9.6, -1.1) {loss};
+\draw[arr] (O2.east) -- (L.west);
+
+\node[learn] (WQ2) at (0.0, -1.1) {$W_Q$};  \dotmark{WQ2}
+\node[learn] (WK2) at (2.1, -1.1) {$W_K$};  \dotmark{WK2}
+\node[learn] (WV2) at (4.2, -1.1) {$W_V$};  \dotmark{WV2}
+
+\draw[-{Stealth[length=6pt]}, line width=1.1pt, gradcolor, dashed]
+    (L.south) .. controls (8.6, -2.8) and (1.6, -2.8) .. (WQ2.south);
+\draw[-{Stealth[length=6pt]}, line width=1.1pt, gradcolor, dashed]
+    (L.south) .. controls (8.3, -2.4) and (3.4, -2.4) .. (WK2.south);
+\draw[-{Stealth[length=6pt]}, line width=1.1pt, gradcolor, dashed]
+    (L.south) .. controls (8.0, -2.0) and (5.2, -2.0) .. (WV2.south);
+\node[font=\sffamily, text=gradcolor, anchor=north, align=center]
+    at (5.0, -3.35) {gradients reach only the learned matrices\\(and the
+    embedding table that $X$ is read from)};
+
+% ---------------------------------------------------------------- round again
+% enters the dashed group from below, the same direction the gradient
+% arrows enter the matrices in panel (e)
+\draw[-{Stealth[length=7pt]}, line width=1.1pt, gradcolor, opacity=0.8,
+      rounded corners=6pt]
+    (WQ2.west) -- (-3.8, -1.1) -- (-3.8, 10.15) -- (3.0, 10.15)
+    -- (Wbox.south);
+\node[font=\sffamily, text=gradcolor, anchor=south, rotate=90, align=center]
+    at (-4.0, 7.0) {the next sentence uses the updated matrices,\\so $Q$, $K$
+    and $V$ come out different};
+
+\end{tikzpicture}
+\end{document}

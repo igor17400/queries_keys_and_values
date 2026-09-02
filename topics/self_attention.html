@@ -74,7 +74,7 @@
       </header>
 
       <div
-        class="space-y-12 text-gray-700 dark:text-gray-300 leading-relaxed text-[17px]"
+        class="space-y-12 text-gray-700 dark:text-gray-300 leading-relaxed text-[18px]"
       >
         <section>
           <p>
@@ -160,7 +160,7 @@
           </p>
 
           <p class="mt-4">Their shapes follow from what each one has to do:</p>
-          <ul class="mt-3 ml-6 space-y-3 list-disc text-[17px]">
+          <ul class="mt-3 ml-6 space-y-3 list-disc text-[18px]">
             <li>
               $X$ &rarr; $n \times d_{\text{model}}$, one row per word in the
               sentence.
@@ -215,8 +215,38 @@
 
         <section>
           <h2 class="text-2xl font-semibold text-ink dark:text-white mb-4">
-            Why three matrices and not one
+            Three matrices, and what training changes
           </h2>
+          <p>
+            Before the argument, here is the whole mechanism on one page, with
+            one thing marked that no earlier figure has shown: which parts are
+            <em>learned</em> and which are <em>computed</em> at every step.
+          </p>
+
+          <figure class="my-10 flex flex-col items-center">
+            <img
+              src="../figures/build/attention_breakdown.svg"
+              alt="A five panel breakdown of attention. Panel a projects X through W_Q, W_K and W_V into Q, K and V. Panel b multiplies Q by K transpose to get scores. Panel c scales and softmaxes them into weights. Panel d multiplies the weights by V to get the output. Panel e shows gradients flowing back from the loss to the three weight matrices only."
+              class="w-full max-w-3xl"
+            />
+            <figcaption class="mt-3 text-sm text-muted text-center max-w-2xl">
+              The whole of attention in five steps. The regular boxes represent
+              the tensors which ae rebuilt from scratch for every sentence. The
+              thick outlines with a dot are the learned matrices, which persist
+              and change only during training.
+              <strong
+                >$Q$, $K$ and $V$ are not parameters. They are results.</strong
+              >
+              What the model owns is $W_Q$, $W_K$ and $W_V$, and panel (e) is
+              the only place anything is updated. The dashed box in panel (a)
+              holds exactly those three matrices, and the arrow that runs up the
+              left-hand side and into it closes the loop: the updated matrices
+              are the ones panel (a) uses on the next sentence, which is why
+              $Q$, $K$ and $V$ come out different next time without ever being
+              trained themselves.
+            </figcaption>
+          </figure>
+
           <p>
             Back in
             <a
@@ -231,19 +261,15 @@
             >, so the model can learn one projection that makes a word easy to
             find and a completely different one for what that word hands over.
             If they shared a single matrix the two would collapse into the same
-            thing, and a word could only ever offer exactly what it advertises.
+            information, and a word could only ever offer exactly its unique
+            meaning and not its collective influence over a context.
           </p>
-        </section>
 
-        <section>
-          <h2 class="text-2xl font-semibold text-ink dark:text-white mb-4">
-            What the model actually learns
-          </h2>
-          <p>
-            One thing has quietly changed, and it should be said plainly. Nobody
-            writes the questions. $W_Q$, $W_K$ and $W_V$ begin as random
-            numbers, and whatever <em>chased</em> ends up asking is simply
-            whatever direction turned out to reduce the loss. In
+          <p class="mt-4">
+            Note that at any point we wrote any question to be asked as we were
+            doing before . $W_Q$, $W_K$ and $W_V$ begin as random numbers, and
+            whatever <em>chased</em> ends up asking is simply whatever direction
+            turned out to reduce the loss. In
             <a
               href="scaled_dot_product.html"
               class="text-c2 hover:text-c3 transition-colors"
@@ -252,6 +278,19 @@
             we said a query is a vector rather than a sentence in English. Now
             we can say something stronger:
             <span class="hl-c2">the query is not designed at all</span>.
+          </p>
+          <p class="mt-4">
+            There is another point to why we need three matrices. Suppose we did
+            share a single matrix, $W_Q = W_K = W$. Then $Q$ and $K$ are the
+            same thing, both equal to $XW$, and the score matrix becomes
+            $$QK^\top = (XW)(XW)^\top$$ which is symmetric. Entry $(i,j)$ equals
+            entry $(j,i)$, always. Sharing the matrix would force how much
+            "chased" attends to "mouse"" to be exactly how much "mouse" attends
+            to "chased"", for every sentence, at every point in training, with
+            no way for the model to escape it. Language is not built that way. A
+            verb needs its object far more than the object needs the verb, and a
+            pronoun needs its antecedent far more than the antecedent needs the
+            pronoun.
           </p>
           <!-- TO WRITE: the coreference example on the longer sentence, "the
                cat chased the mouse because it was hungry", where resolving
