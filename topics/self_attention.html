@@ -68,17 +68,199 @@
           Self-Attention
         </h1>
         <p class="text-lg text-muted leading-relaxed">
-          When the queries, the keys, and the values are all learned projections of the same sequence.
+          When the queries, the keys, and the values are all learned projections
+          of the same sequence.
         </p>
       </header>
 
       <div
         class="space-y-12 text-gray-700 dark:text-gray-300 leading-relaxed text-[17px]"
       >
-        <!-- TODO: written together. See figures/FIGURE_PLAN.md for the
-             schematics planned for this section. -->
         <section>
-          <p class="text-muted italic">Not written yet.</p>
+          <p>
+            The sentence arrives as a matrix $X$, one row per word, each row the
+            embedding of that word. Then we multiply it by three different
+            weight matrices, one for each role, and out come $Q$, $K$, and $V$.
+            Same $X$ every time, three different matrices and results. Let's
+            understand what's happening here.
+          </p>
+        </section>
+
+        <section>
+          <h2 class="text-2xl font-semibold text-ink dark:text-white mb-4">
+            What a word looks like to the model
+          </h2>
+          <p>
+            We have been using vectors for five sections now, but we never
+            actually talked about where they come from in the first place. To
+            the model, a word is just a row of numbers that it learns to
+            understand. Every single word in the vocabulary gets its own vector
+            of length $d_{\text{model}}$, which is called an <b>embedding</b>.
+          </p>
+          <p class="mt-4">
+            These start out as totally random guesses and get tweaked during
+            training along with everything else. When we stack the embeddings
+            for our five words on top of each other as rows, we get the entire
+            sentence matrix $X$.
+          </p>
+
+          <figure class="my-10 flex flex-col items-center">
+            <img
+              src="../figures/build/embedding_lookup.svg"
+              alt="An embedding table with one row per vocabulary token, and arrows selecting five of those rows to build the sentence matrix X. The row for the word the is selected twice, once for each occurrence in the sentence."
+              class="w-full max-w-2xl"
+            />
+            <figcaption class="mt-3 text-sm text-muted text-center max-w-xl">
+              Building $X$ is a lookup: each word in the sentence fetches its
+              row from the table. Notice that <em>the</em> is fetched twice and
+              both copies are identical, so at this point the model has no way
+              of telling the two apart. The values in each row are
+              <b>learned</b>, not designed, exactly like every other parameter.
+            </figcaption>
+          </figure>
+
+          <p class="mt-4">
+            So $X$ has $n$ rows and $d_{\text{model}}$ columns: one row per
+            word, one column per dimension. That is all we need from embeddings
+            here. How they get trained, how text is split into tokens in the
+            first place, why a learned vector beats a one-hot column, all of
+            that is a subject of its own. From here on, $X$ is simply the
+            sentence, written as numbers.
+          </p>
+        </section>
+
+        <section>
+          <h2 class="text-2xl font-semibold text-ink dark:text-white mb-4">
+            Where $Q$, $K$ and $V$ come from
+          </h2>
+          <p>
+            Now we can build the three matrices every formula so far has taken
+            for granted. Each of them is made by multiplying $X$ by its own
+            weight matrix. Three multiplications and three results based on the
+            same $X$.
+            <span class="hl-c2"
+              >That is where the <em>self</em> in self-attention comes from: the
+              queries, the keys and the values are all built out of the same
+              sequence</span
+            >. That is,
+          </p>
+          <div
+            class="my-3 py-3 text-center rounded-lg border border-c3/40 bg-c3/5"
+          >
+            $$Q = XW_Q, \qquad K = XW_K, \qquad V = XW_V$$
+          </div>
+
+          <p class="mt-4">
+            The three new objects here are $W_Q$, $W_K$ and $W_V$, the
+            <strong>weight matrices</strong>. They are parameters of the model,
+            exactly like the embeddings in the sense that they start as
+            <b>random numbers</b> and are <b>adjusted by training</b>. They do
+            not depend on the sentence. The same three matrices are used for
+            every sentence the model ever sees, and it is only $X$ that changes.
+          </p>
+
+          <p class="mt-4">Their shapes follow from what each one has to do:</p>
+          <ul class="mt-3 ml-6 space-y-3 list-disc text-[17px]">
+            <li>
+              $X$ &rarr; $n \times d_{\text{model}}$, one row per word in the
+              sentence.
+            </li>
+            <li>
+              $W_Q$ and $W_K$ &rarr; $d_{\text{model}} \times d_k$, so both $Q$
+              and $K$ come out as $n \times d_k$.
+            </li>
+            <li>
+              $W_V$ &rarr; $d_{\text{model}} \times d_v$, so $V$ comes out as $n
+              \times d_v$.
+            </li>
+          </ul>
+
+          <p class="mt-4">
+            $W_Q$ and $W_K$ have to produce the same width, because
+            <span class="hl-c2"
+              >$QK^{\top}$ only exists if queries and keys are the same
+              length</span
+            >. That is the constraint we ran into back in
+            <a
+              href="similarity.html"
+              class="text-c2 hover:text-c3 transition-colors"
+              >section 03</a
+            >, when we noticed two vectors must match in length to have a dot
+            product at all. This is where it is actually enforced.
+          </p>
+
+          <figure class="my-10 flex flex-col items-center">
+            <img
+              src="../figures/build/learned_projections.svg"
+              alt="The sentence matrix X on the left, with three arrows leaving it labelled times W_Q, times W_K and times W_V, each producing a narrower matrix: Q, K and V."
+              class="w-full max-w-xl"
+            />
+            <figcaption class="mt-3 text-sm text-muted text-center max-w-xl">
+              One $X$ and three matrices. All three outputs keep the same five
+              rows, one per word, and all three are narrower than $X$. The
+              projections change the width from $d_{\text{model}}$ down to $d_k$
+              or $d_v$. Nothing here mixes one word with another, the arrows
+              only change what each row is made of.
+            </figcaption>
+          </figure>
+          <p class="mt-4">
+            The projections are <b>row-wise</b>. Row $i$ of $Q$ is row $i$ of
+            $X$ times $W_Q$, so word $i$'s query is built from word $i$'s
+            embedding and nothing else. The same matrix is applied to every
+            word, and no word's projection looks at any other. All the mixing
+            happens later, in the projection step. Up to this point the five
+            words have not been multiplied or interacted.
+          </p>
+        </section>
+
+        <section>
+          <h2 class="text-2xl font-semibold text-ink dark:text-white mb-4">
+            Why three matrices and not one
+          </h2>
+          <p>
+            Back in
+            <a
+              href="dictionary_analogy.html"
+              class="text-c2 hover:text-c3 transition-colors"
+              >section 02</a
+            >
+            we said a key and a value are allowed to be different things, and it
+            was hard to see why anyone should care. Now we can see it.
+            <span class="hl-c2"
+              >$W_Q$, $W_K$ and $W_V$ are separate parameters</span
+            >, so the model can learn one projection that makes a word easy to
+            find and a completely different one for what that word hands over.
+            If they shared a single matrix the two would collapse into the same
+            thing, and a word could only ever offer exactly what it advertises.
+          </p>
+        </section>
+
+        <section>
+          <h2 class="text-2xl font-semibold text-ink dark:text-white mb-4">
+            What the model actually learns
+          </h2>
+          <p>
+            One thing has quietly changed, and it should be said plainly. Nobody
+            writes the questions. $W_Q$, $W_K$ and $W_V$ begin as random
+            numbers, and whatever <em>chased</em> ends up asking is simply
+            whatever direction turned out to reduce the loss. In
+            <a
+              href="scaled_dot_product.html"
+              class="text-c2 hover:text-c3 transition-colors"
+              >section 05</a
+            >
+            we said a query is a vector rather than a sentence in English. Now
+            we can say something stronger:
+            <span class="hl-c2">the query is not designed at all</span>.
+          </p>
+          <!-- TO WRITE: the coreference example on the longer sentence, "the
+               cat chased the mouse because it was hungry", where resolving
+               "it" is the thing attention has to get right.
+               Figure: self_attention_sentence, one word's weights drawn as arcs
+               of varying thickness over the sentence.
+               Then the closing hook into section 07: one set of three matrices
+               can only learn one kind of question, and a word usually needs to
+               ask several at once. -->
         </section>
       </div>
 
