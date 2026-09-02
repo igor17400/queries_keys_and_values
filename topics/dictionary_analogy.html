@@ -250,12 +250,12 @@ store["what did the cat chase?"]   # KeyError
               alt="The sentence acts as the store: each word supplies a key vector and a value vector. The query is compared against every key, producing a weight per word, and the answer is every value blended in proportion to its weight."
               class="w-full max-w-2xl"
             />
-            <figcaption class="mt-3 text-sm text-muted text-center max-w-xl">
-              The soft lookup in full. Each word supplies a key, which is how it
-              gets found, and a value, which is what it hands over. The query is
-              compared against every key at once, and the answer is a blend of
-              all five values. The weights are the same ones we used before, so
-              this is the same lookup, now with the vectors drawn in.
+            <figcaption class="mt-3 text-sm text-muted text-center max-w-2xl">
+              The soft lookup in full. Each word supplies a <b>key</b> and a
+              <b>value</b>. The query is compared against every key at once, and
+              the answer is a blend of all five values. The weights are the same
+              ones we used before, so this is the same lookup, now with the
+              vectors drawn in.
             </figcaption>
           </figure>
 
@@ -305,12 +305,12 @@ store["what did the cat chase?"]   # KeyError
         class="mt-20 pt-8 border-t border-gray-200 dark:border-gray-800 flex justify-between text-sm"
       >
         <a href="intro.html" class="text-muted hover:text-c2 transition-colors"
-          >&larr; Why Attention?</a
+          >&larr; 01 &nbsp;&middot;&nbsp; Why Attention?</a
         >
         <a
           href="similarity.html"
           class="text-muted hover:text-c2 transition-colors"
-          >Measuring Similarity &rarr;</a
+          >03 &nbsp;&middot;&nbsp; Measuring Similarity &rarr;</a
         >
       </nav>
     </article>

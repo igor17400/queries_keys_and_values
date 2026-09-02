@@ -20,16 +20,18 @@
 %   Q        top-left (0, 4.2)     5 rows x 3 cols
 %   K^T      top-left (3.3, 3.6)   3 rows x 5 cols
 %   QK^T     top-left (8.4, 4.2)   5 rows x 5 cols
-%   the highlighted pair: row 2 of Q, column 4 of K^T
+%   the highlighted pair: row 1 of Q, column 3 of K^T (zero-based)
 % ================================================================
 
 % ---------------------------------------------------------------- Q
 \foreach \r in {0,...,4} {
     \foreach \c in {0,1,2} {
-        \pgfmathsetmacro{\op}{ifthenelse(\r==1, 0.55, 0.13)}
+        \pgfmathsetmacro{\op}{ifthenelse(\r==1, 0.45, 0.10)}
         \fill[c1, opacity=\op] (\c*\cs, 4.2-\r*\cs-\cs) rectangle ++(\cs, \cs);
         \draw[c1, opacity=0.45, line width=0.5pt]
             (\c*\cs, 4.2-\r*\cs-\cs) rectangle ++(\cs, \cs);
+        \node[font=\sffamily\tiny, text=c1!75!black]
+            at (\c*\cs+0.5*\cs, 4.2-\r*\cs-0.5*\cs) {$q_{\r,\c}$};
     }
 }
 \node[font=\sffamily\large, text=c1] at (0.9, 0.75) {$Q$};
@@ -49,10 +51,12 @@
 % ---------------------------------------------------------------- K transpose
 \foreach \r in {0,1,2} {
     \foreach \c in {0,...,4} {
-        \pgfmathsetmacro{\op}{ifthenelse(\c==3, 0.55, 0.13)}
+        \pgfmathsetmacro{\op}{ifthenelse(\c==3, 0.45, 0.10)}
         \fill[c2, opacity=\op] (3.3+\c*\cs, 3.6-\r*\cs-\cs) rectangle ++(\cs, \cs);
         \draw[c2, opacity=0.45, line width=0.5pt]
             (3.3+\c*\cs, 3.6-\r*\cs-\cs) rectangle ++(\cs, \cs);
+        \node[font=\sffamily\tiny, text=c2!75!black]
+            at (3.3+\c*\cs+0.5*\cs, 3.6-\r*\cs-0.5*\cs) {$k_{\c,\r}$};
     }
 }
 \node[font=\sffamily\large, text=c2] at (4.8, 0.75) {$K^{\top}$};
@@ -98,7 +102,7 @@
 \draw[-{Stealth[length=5pt]}, line width=1.0pt, c2]
     (12.4, 3.3) -- (11.5, 3.3);
 \node[font=\sffamily\small, text=c2, anchor=west] at (12.5, 3.3)
-    {$q_2 \cdot k_4$};
+    {$q_1 \cdot k_3$};
 
 \end{tikzpicture}
 \end{document}

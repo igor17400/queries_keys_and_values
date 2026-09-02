@@ -152,19 +152,152 @@
           </ul>
 
           <p class="mt-4">
-            That explains the shading. The darker cell on its own is a single
-            score, $q_2 \cdot k_4$: word 2's query against word 4's key, one dot
-            product of the kind we spent the last two sections on. The shaded
-            row it sits in is
+            That explains the shading. Counting from zero, as the labels in the
+            figure do, the darker cell on its own is a single score, $q_1 \cdot
+            k_3$: the query of the second word against the key of the fourth,
+            one dot product of the kind we spent the last two sections on. The
+            shaded row it sits in is
             <span class="hl-c2"
-              >all five scores for word 2's query, its match against every word
+              >all five scores for that one query, its match against every word
               in the sentence including itself</span
-            >. That row is exactly the list of five numbers we ended section 03
+            >. That row is exactly the list of five numbers we ended
+            <a
+              href="similarity.html"
+              class="text-c2 hover:text-c3 transition-colors"
+              >section 03</a
+            >
             with, and every other row of the matrix is the same list for a
             different word.
           </p>
 
-          <p class="mt-4"></p>
+          <p class="mt-4">
+            Let's now apply what we learned before. Divide the whole matrix by
+            $\sqrt{d_k}$ and apply softmax along <b>each row separately</b>. So
+            every row sums to one on its own. Thus word 2 ends up with its own
+            distribution of attention over the five words, word 3 gets its own,
+            and the matrix as a whole does not sum to anything in particular.
+          </p>
+
+          <figure class="my-10 flex flex-col items-center">
+            <img
+              src="../figures/build/attention_pipeline.svg"
+              alt="The same five by five matrix at three stages: raw scores, the same values divided by the square root of three, and the result of applying softmax to each row, where every row sums to one."
+              class="w-full"
+            />
+            <figcaption class="mt-3 text-sm text-muted text-center max-w-3xl">
+              The same table three times over. Dividing by $\sqrt{d_k}$ changes
+              every entry by the same factor and changes no ordering. The
+              softmax then runs along each row on its own, which is why every
+              row of the last table sums to 1 while the table as a whole sums to
+              5. Row <strong>(3)</strong> is the one we have been following
+              since the beginning, and its weights are the same 0.04, 0.18,
+              0.12, 0.06 and 0.60 as in the examples before.
+            </figcaption>
+          </figure>
+
+          <p class="mt-4">
+            The final matrix is a complete set of weights: five rows, each one a
+            distribution over the five words. But weights are not the final
+            answer. Nothing in that table carries information about the words
+            themselves. It only says how much of each one to use, and supplying
+            the content itself is the job of the values matrix.
+          </p>
+        </section>
+
+        <section>
+          <h2 class="text-2xl font-semibold text-ink dark:text-white mb-4">
+            The values matrix
+          </h2>
+          <p>
+            So bring in the values! Every word hands over a value vector, just
+            as it hands over a key, and stacking those as rows gives a matrix we
+            shall call $V$ with one row per word. Multiplying the weights by $V$
+            is the last step, and it is the one that finally produces something
+            worth reading:
+            <span class="hl-c2"
+              >row $i$ of the result is word $i$'s answer, all five value
+              vectors mixed together in the proportions its own row of weights
+              asks for</span
+            >. That is the soft lookup from
+            <a
+              href="dictionary_analogy.html"
+              class="text-c2 hover:text-c3 transition-colors"
+              >section 02</a
+            >, run five times over, once for every word in the sentence.
+          </p>
+
+          <figure class="my-10 flex flex-col items-center">
+            <img
+              src="../figures/build/values_product.svg"
+              alt="A five by five weights matrix multiplied by a five by three values matrix V, giving a five by three output. Two rows of weights are shown with their numbers, the row for chased and the row for mouse, and the two matching rows of the output are highlighted."
+              class="w-full max-w-2xl"
+            />
+            <figcaption class="mt-3 text-sm text-muted text-center max-w-xl">
+              Unlike the previous product, here one row multiplies the
+              <em>whole</em> matrix $V$ rather than a single column, and
+              produces a whole row of the output. Two rows are worked through.
+              <em>chased</em> puts 0.60 of its weight on <em>mouse</em>, so its
+              answer leans heavily on that one value, while
+              <em>mouse</em> spreads 0.42 onto <em>chased</em> and blends more
+              evenly.
+            </figcaption>
+          </figure>
+          <p class="mt-4">
+            Let's step back and ask what we are actually doing here. Every row
+            of the weights answers one question:
+            <em
+              >when this word builds its new representation, how much of each
+              other word should it pull in?</em
+            >
+          </p>
+          <p class="mt-4">
+            So the 0.60 sitting where chased meets mouse is saying that the most
+            of chased's answer is made out of mouse's value. Getting slightly
+            philosophical: what is the influence of mouse on chased? Inside this
+            mechanism it has one exact meaning: it's the fraction of chased's
+            output vector that came from mouse's value. A verb is incomplete
+            without its object, so after this step the representation of chased
+            is no longer chased in the abstract, it is something closer to a
+            "chased a mouse".
+          </p>
+        </section>
+        <section>
+          <h2 class="text-2xl font-semibold text-ink dark:text-white mb-4">
+            The Scaled Dot Attention
+          </h2>
+          <p>Everything from the last three sections now fits on one line:</p>
+          <div
+            class="my-3 py-3 text-center rounded-lg border border-c3/40 bg-c3/5"
+          >
+            $$\operatorname{Attention}(Q, K, V) =
+            \operatorname{softmax}\!\left(\frac{QK^{\top}}{\sqrt{d_k}}\right)
+            V$$
+          </div>
+          <p class="mt-4">
+            Read it from the inside out and there is nothing in it we have not
+            already built. $QK^{\top}$ scores every query against every key.
+            Dividing by $\sqrt{d_k}$ keeps those scores in a range the softmax
+            can work with. The softmax turns each row into weights that sum to
+            one. Multiplying by $V$ blends the values in those proportions.
+            <span class="hl-c2"
+              >Four sections of work, and the whole mechanism is one line
+              long</span
+            >.
+          </p>
+
+          <p class="mt-4">
+            There is one thing this formula does not tell us, and it is the
+            question you have probably been holding for a while now. Where the
+            **** $Q$, $K$ and $V$ come from? The catch, they are made from the
+            sentence itself, by three matrices the model learns during training,
+            and that is exactly what the
+            <a
+              href="self_attention.html"
+              class="text-c2 hover:text-c3 transition-colors"
+              >next section</a
+            >
+            is about.
+          </p>
         </section>
       </div>
 
@@ -175,12 +308,12 @@
         <a
           href="softmax_weights.html"
           class="text-muted hover:text-c2 transition-colors"
-          >&larr; From Scores to Weights</a
+          >&larr; 04 &nbsp;&middot;&nbsp; From Scores to Weights</a
         >
         <a
           href="self_attention.html"
           class="text-muted hover:text-c2 transition-colors"
-          >Self-Attention &rarr;</a
+          >06 &nbsp;&middot;&nbsp; Self-Attention &rarr;</a
         >
       </nav>
     </article>
