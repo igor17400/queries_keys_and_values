@@ -68,17 +68,86 @@
           Positional Information
         </h1>
         <p class="text-lg text-muted leading-relaxed">
-          Attention cannot see order on its own: sinusoidal encodings, learned embeddings, and rotary positions.
+          Attention and a sentence scramble
         </p>
       </header>
 
       <div
         class="space-y-12 text-gray-700 dark:text-gray-300 leading-relaxed text-[18px]"
       >
-        <!-- TODO: written together. See figures/FIGURE_PLAN.md for the
-             schematics planned for this section. -->
         <section>
-          <p class="text-muted italic">Not written yet.</p>
+          <p>
+            Imagine feeding our model a slightly different sentence. Instead of
+            <em>The <b>cat</b> chased the <u>mouse</u></em
+            >, we give it <em>The <u>mouse</u> chased the <b>cat</b></em
+            >. If we run this new sequence through the attention mechanism we
+            just built, something intriguing happens. Because the weight
+            matrices $W_Q$, $W_K$, and $W_V$ act on each word independently, the
+            same words generate the exact same queries, keys, and values. The
+            dot products and softmax weights move with them, and every word
+            walks away holding the exact same contextual vector it did in the
+            first sentence, just sitting in a different row.
+            <span class="hl-c2"
+              >Whatever the model understands about this sentence, it has no
+              idea who actually did the chasing (cat or mouse)</span
+            >.
+          </p>
+
+          <p class="mt-4">
+            This is not a flaw we have to go hunting for, because our own
+            numbers have been quietly breaking it for several sections. Back in
+            <a
+              href="self_attention.html"
+              class="text-c2 hover:text-c3 transition-colors"
+              >section 06</a
+            >
+            we said that <em>the</em> is fetched twice from the embedding table
+            and that both copies come back identical. If that is true, then both
+            occurrences hand over the very same key, and word
+            <strong>(3)</strong>'s query has no choice but to score them
+            equally. Yet every figure since
+            <a
+              href="scaled_dot_product.html"
+              class="text-c2 hover:text-c3 transition-colors"
+              >section 05</a
+            >
+            gives the first <em>the</em> a weight of 0.04 and the second one
+            0.06.
+            <span class="hl-c2"
+              >Both of those things cannot be true at the same time</span
+            >.
+          </p>
+
+          <p class="mt-4">
+            The general statement is easier to write down than to argue about.
+            Let $\Pi$ be a permutation matrix, so that $\Pi X$ is our
+            sentence with its rows shuffled. Because the projections are
+            row-wise, shuffling the input shuffles $Q$, $K$, and $V$ in exactly
+            the same way, giving $Q' = \Pi Q$, $K' = \Pi K$, and
+            $V' = \Pi V$. The softmax then runs along each row on its own, and
+            $\Pi^{\top}$ only reorders the entries within a row, so it passes
+            straight through and meets its own $\Pi$ on the other side:
+          </p>
+
+          <div
+            class="my-3 py-3 text-center rounded-lg border border-c3/40 bg-c3/5"
+          >
+            $$\operatorname{softmax}\!\left(\frac{(\Pi Q)(\Pi K)^{\top}}
+            {\sqrt{d_k}}\right)(\Pi V) =
+            \Pi\operatorname{softmax}\!\left(\frac{QK^{\top}}{\sqrt{d_k}}\right)
+            \Pi^{\top}\Pi\,V =
+            \Pi\operatorname{softmax}\!\left(\frac{QK^{\top}}{\sqrt{d_k}}\right)V$$
+          </div>
+
+          <p class="mt-4">
+            since $\Pi^{\top}\Pi = I$. The output is the old output with its
+            rows moved, and nothing else, which is the property called
+            <strong>permutation equivariance</strong>. The one part of the model
+            that treats positions differently at all is the mask we added in the
+            last section, and it is a blunt instrument: it decides which cells a
+            row is allowed to read, and still never says <em>where</em> a
+            readable word is sitting.
+          </p>
         </section>
       </div>
 
