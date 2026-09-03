@@ -75,7 +75,10 @@ c4**. Never swap these between figures.
 
 | name | shows |
 |------|-------|
-| `causal_mask` | The $n \times n$ score matrix with the upper triangle set to $-\infty$, and the same matrix after softmax. |
+| `next_token_targets` | The sentence *The cat chased the mouse* as five rectangles in a row, each labelled with its position **(1)** to **(5)**. Four curved arrows above the strip run from box $i$ to box $i+1$, the guess each position must make. Box **(1)** annotated "nothing precedes it, so it is never guessed at", box **(5)** annotated "nothing follows it, so it never guesses". Five words, four arrows. Resolves the two occurrences of *the* for the reader. Boxes c1 outline on c4 fill, arrows c2. |
+| `causal_triangle` | Two 5x5 grids side by side for *The cat chased the mouse*, rows labelled with the querying word in c1, columns with the word being read in c2. Left, "every word reads every word": all 25 cells filled. Right, "every word reads only itself and what came before": the lower triangle including the diagonal stays filled, the upper triangle is struck through and empty. Row **(3)** *chased* framed in both, keeping (1)(2)(3) and losing (4)(5). Permission only: no $-\infty$, no numbers, no softmax, those belong to `causal_mask`. |
+| `causal_mask` | Row **(3)** *chased* in three panels, carrying the numbers from `attention_pipeline` unchanged. (a) the scaled scores `-1.85 -0.34 -0.75 -1.44 0.86`; (b) the same row with the two forbidden entries replaced by $-\infty$; (c) after softmax, `0.12 0.53 0.35 0.00 0.00`, annotated "sums to 1". Shows the arithmetic on one row: the permission view is `causal_triangle`. |
+| `padding_batch` | Two sentences of different lengths becoming one rectangular batch. Left, ragged: *The cat chased the mouse* as five boxes, *The mouse escaped* as three, with the two missing slots drawn as empty dashed outline so the ragged edge is obvious. An arrow labelled "pad to the longest". Right, a 2x5 block where sentence 2 carries three word boxes and two inert `[PAD]` boxes, annotated "one tensor, shape $2 \times 5$". Plumbing only: no scores, no mask, no $-\infty$, those belong to `padding_mask`. |
 | `padding_mask` | A batch of unequal-length sequences and the mask that keeps padding tokens from receiving weight. |
 
 ## 09 Positional Information

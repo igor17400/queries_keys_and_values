@@ -68,17 +68,379 @@
           Masking and Causality
         </h1>
         <p class="text-lg text-muted leading-relaxed">
-          Padding masks, causal masks, and how we forbid a query from reading the future.
+          Padding masks, causal masks, and how we forbid a query from reading
+          the future.
         </p>
       </header>
 
       <div
         class="space-y-12 text-gray-700 dark:text-gray-300 leading-relaxed text-[18px]"
       >
-        <!-- TODO: written together. See figures/FIGURE_PLAN.md for the
-             schematics planned for this section. -->
         <section>
-          <p class="text-muted italic">Not written yet.</p>
+          <p>
+            The last section closed on something we did not consider. That is,
+            which positions a head is <em>allowed</em> to read. The answer so
+            far has been all of them, and the question never came up because of
+            an assumption we never wrote down. We have been treating the
+            sentence as a finished object, handed to the model complete, free to
+            be studied from any angle. Plenty of tasks do look like that. But in
+            some tasks it does not, it is shown the sentence one word at a time
+            and asked what comes next, and for a model in that position,
+            <span class="hl-c2"
+              >the score table we have spent five sections building is actually
+              the answer key</span
+            >.
+          </p>
+
+          <p class="mt-4">
+            The task described above is called
+            <strong>next-token prediction</strong>, and it runs like this. The
+            sentence goes in as $X$, all five words at once, exactly as in every
+            section so far. What changes is what we ask of the output. Row $i$
+            is no longer read as a better representation of word $i$, it is read
+            as a guess at word $i+1$. Laid out in a row, with each word carrying
+            its position, the pairing is easy to follow.
+          </p>
+
+          <figure class="my-10 flex flex-col items-center">
+            <img
+              src="../figures/build/next_token_targets.svg"
+              alt="The five words of the sentence drawn as a row of rectangles labelled one to five, with four arrows above them running from each box to the one on its right, the word that position has to guess."
+              class="w-full max-w-2xl"
+            />
+            <figcaption class="mt-3 text-sm text-muted text-center max-w-xl">
+              Five words, four arrows. Every position is asked for the word to
+              its right, so <strong>(1)</strong> is never guessed at and
+              <strong>(5)</strong> never guesses. The two occurrences of
+              <em>the</em> are separate boxes here, exactly as they are separate
+              entries in the store.
+            </figcaption>
+          </figure>
+
+          <p class="mt-4">Written out, that is:</p>
+
+          <ul class="mt-3 ml-6 space-y-2 list-disc text-[18px]">
+            <li>
+              <strong>(1)</strong> <em>The</em> &rarr; must guess
+              <strong>(2)</strong> <em>cat</em>
+            </li>
+            <li>
+              <strong>(2)</strong> <em>cat</em> &rarr; must guess
+              <strong>(3)</strong> <em>chased</em>
+            </li>
+            <li>
+              <strong>(3)</strong> <em>chased</em> &rarr; must guess
+              <strong>(4)</strong> <em>the</em>
+            </li>
+            <li>
+              <strong>(4)</strong> <em>the</em> &rarr; must guess
+              <strong>(5)</strong> <em>mouse</em>
+            </li>
+          </ul>
+
+          <p class="mt-4">
+            Five words, four guesses. Nothing comes before
+            <strong>(1)</strong> for it to be guessed from, and nothing comes
+            after <strong>(5)</strong> for it to guess. The loss measures how
+            wrong those four guesses are, and that one number is the entire
+            training signal.
+          </p>
+
+          <p class="mt-4">
+            Nothing about the mechanism has changed since
+            <a
+              href="scaled_dot_product.html"
+              class="text-c2 hover:text-c3 transition-colors"
+              >section 05</a
+            >. What has changed is what we want out of it. Back then,
+            <em>chased</em> pulling 0.60 out of <em>mouse</em> was the mechanism
+            working exactly as intended. A verb is incomplete without its
+            object, and that blend turned <em>chased</em> into something closer
+            to <em>chased a mouse</em>. We were building a
+            <b>richer representation of a word out of the words around it</b>,
+            and reaching forward was fair, because the whole sentence was ours
+            to read. The goal is no longer that.
+            <span class="hl-c2"
+              >We are not asking <em>chased</em> what it means, we are asking it
+              what comes next</span
+            >.
+          </p>
+        </section>
+
+        <section>
+          <h2 class="text-2xl font-semibold text-ink dark:text-white mb-4">
+            How to learn the next word
+          </h2>
+          <p>
+            Take row <strong>(3)</strong> again, the weights <em>chased</em>
+            came away with: 0.04, 0.18, 0.12, 0.06 and 0.60. Under the new job,
+            <em>chased</em> has to produce the <em>the</em> at
+            <strong>(4)</strong>. Its row hands it 0.06 of that exact word, and
+            another 0.60 of <em>mouse</em> one step further on again. Two thirds
+            of what <em>chased</em> walks away with is built out of the words it
+            is meant to be predicting.
+            <span class="hl-c2"
+              >The answer is already inside the vector it has to answer
+              from</span
+            >.
+          </p>
+
+          <p class="mt-4">
+            If the trouble is that a word can see what comes after it, we stop
+            letting it.
+            <em>chased</em> may look at <strong>(1)</strong>,
+            <strong>(2)</strong> and itself, and nothing further.
+            <strong>(2)</strong> gets one fewer, <strong>(4)</strong> gets one
+            more, and <strong>(1)</strong> is left with only itself. Every row
+            keeps its left-hand part and loses everything beyond its own
+            position.
+          </p>
+
+          <figure class="my-10 flex flex-col items-center">
+            <img
+              src="../figures/build/causal_triangle.svg"
+              alt="Two five by five grids of the sentence. On the left every cell is filled, so every word reads every word. On the right the cells above the diagonal are struck out and empty, leaving a triangle in which each word reads only itself and the words before it."
+              class="w-full max-w-2xl"
+            />
+            <figcaption class="mt-3 text-sm text-muted text-center max-w-xl">
+              The same table, before and after. Row <strong>(3)</strong> is
+              framed in both: on the left <em>chased</em> holds all five cells,
+              on the right it keeps <strong>(1)</strong>,
+              <strong>(2)</strong> and itself, and the two that held its answer
+              are gone. <strong>The square becomes a triangle</strong>, and
+              <strong>(1)</strong> is left reading nothing but itself.
+            </figcaption>
+          </figure>
+        </section>
+
+        <section>
+          <h2 class="text-2xl font-semibold text-ink dark:text-white mb-4">
+            How to delete an entry
+          </h2>
+          <p>
+            Here's how this works. Instead of removing the cells, we have a
+            trick to make them count for nothing.
+            <span class="hl-c2"
+              >Before the softmax, we set every forbidden score to
+              $-\infty$</span
+            >. The softmax raises $e$ to each score, and $e^{-\infty} = 0$, so
+            those cells come out with weight zero. The row still sums to one,
+            since the division is by the total of what is left.
+          </p>
+
+          <figure class="my-10 flex flex-col items-center">
+            <img
+              src="../figures/build/causal_mask.svg"
+              alt="Row three of the score table in three steps: the five scaled scores, the same row with the last two entries replaced by minus infinity, and the row after softmax, where the first three weights are 0.12, 0.53 and 0.35 and the last two are zero."
+              class="w-full max-w-2xl"
+            />
+            <figcaption class="mt-3 text-sm text-muted text-center max-w-2xl">
+              Row <strong>(3)</strong> through the three steps. The two
+              forbidden scores go to $-\infty$ before the softmax, so they come
+              out at exactly zero and never reach $V$. The three that survive
+              are <em>larger</em> than they were, because they are now divided
+              by a smaller total: 0.04, 0.18 and 0.12 become 0.12, 0.53 and
+              0.35, and the row still sums to 1.
+            </figcaption>
+          </figure>
+
+          <p class="mt-4">
+            We can do all of that with one addition. Build a matrix $M$ of the
+            same shape as the score table, holding $0$ everywhere a word is
+            allowed to read and $-\infty$ everywhere it is not:
+          </p>
+
+          <div
+            class="my-3 py-3 text-center rounded-lg border border-c3/40 bg-c3/5"
+          >
+            $$M_{ij} = \begin{cases} 0 & j \leq i \\ -\infty & j > i
+            \end{cases}$$
+          </div>
+
+          <p class="mt-4">
+            where $i$ is the row, the word doing the reading, and $j$ is the
+            column, the word being read, so the condition $j \leq i$ is just
+            <em>this word came no later than mine</em>. Adding $0$ leaves a
+            score exactly as it was and adding $-\infty$ takes it out, which
+            means
+            <span class="hl-c2"
+              >the whole rule is one matrix added to the scores</span
+            >:
+          </p>
+
+          <div
+            class="my-3 py-3 text-center rounded-lg border border-c3/40 bg-c3/5"
+          >
+            $$\operatorname{Attention}(Q, K, V) =
+            \operatorname{softmax}\!\left(\frac{QK^{\top}}{\sqrt{d_k}} +
+            M\right) V$$
+          </div>
+
+          <p class="mt-4">
+            $M$ is $n \times n$, the same shape as $QK^{\top}$, and it is built
+            from the length of the sentence alone. It does not look at the
+            words, so every sentence of five tokens gets the same $M$, and the
+            same one is reused by every head and every sentence in the batch.
+            Compare it with
+            <a
+              href="scaled_dot_product.html"
+              class="text-c2 hover:text-c3 transition-colors"
+              >section 05</a
+            >
+            and one extra term has appeared.
+          </p>
+        </section>
+
+        <section>
+          <h2 class="text-2xl font-semibold text-ink dark:text-white mb-4">
+            One pass, four guesses
+          </h2>
+          <p>
+            The <b>mask</b> is <b>not</b> the only way to keep the model honest.
+            We could have run it once per prefix instead: show it
+            <em>The</em> and ask for <em>cat</em>, then show it
+            <em>The cat</em> and ask for <em>chased</em>, then
+            <em>The cat chased</em>, and so on. Nothing leaks that way either,
+            because the words it must not see are not in the input at all. It
+            also costs <b>four forward passes</b> for one five-word sentence,
+            and every pass recomputes the prefix that the pass before it had
+            already worked through.
+          </p>
+
+          <p class="mt-4">
+            The mask makes those four passes unnecessary, because one masked
+            pass already contains them. Row <strong>(3)</strong> may read
+            <strong>(1)</strong>, <strong>(2)</strong> and itself and nothing
+            else, which is exactly what a run on <em>The cat chased</em> would
+            have had in front of it. The same holds for every other row.
+            <span class="hl-c2"
+              >A single pass over the whole sentence computes all four prefixes
+              at once</span
+            >, so the four guesses come out together and the loss collects all
+            four at the same time.
+          </p>
+        </section>
+
+        <section>
+          <h2 class="text-2xl font-semibold text-ink dark:text-white mb-4">
+            Sentences of different lengths
+          </h2>
+          <p>
+            Everything so far has been one sentence at a time. Training does not
+            work that way though, it runs a batch of sentences at once, and a
+            batch is a single tensor. A tensor is rectangular, so every sentence
+            in the batch has to be the same length, and as you can imagine
+            sentences are usually not the same length. The usual answer is to
+            pick the longest one and
+            <span class="hl-c2"
+              >fill the others out with a filler token until they match</span
+            >, which is called <strong>padding</strong>.
+          </p>
+
+          <figure class="my-10 flex flex-col items-center">
+            <img
+              src="../figures/build/padding_batch.svg"
+              alt="Two sentences of different lengths, one of five words and one of three, drawn as rows of boxes with a ragged edge. An arrow labelled pad to the longest leads to a rectangular two by five block where the shorter sentence has been filled out with two PAD boxes."
+              class="w-full max-w-2xl"
+            />
+            <figcaption class="mt-3 text-sm text-muted text-center max-w-xl">
+              Padding is there to make the shapes fit, and it says nothing about
+              language. The shorter sentence is filled out until the batch is a
+              rectangle, and the price is two positions that stand for no word
+              at all.
+            </figcaption>
+          </figure>
+
+          <p class="mt-4">
+            The trouble is that the model cannot tell the difference. A pad is a
+            token like any other, it has an embedding, produces a key and a
+            value, its score against every query is a real number and the
+            softmax gives it a share of the weight.
+            <b>Nothing in the mechanism marks it as filler!</b> Real words end
+            up with part of their answer built out of positions that stand for
+            nothing, and how large that part is depends on whatever numbers the
+            pad embedding happens to hold.
+          </p>
+
+          <p class="mt-4">
+            Let's see how we can represent that, say we train on $B$ sentences
+            at once. Pad every one of them to the length of the longest, call
+            that $n$, and the batch arrives as $X$ of shape $B \times n \times
+            d_{\text{model}}$. Sentence $b$ has a true length $n_b \leq n$, and
+            everything past $n_b$ is filler. Masking that filler is one more
+            matrix of the same kind as $M$:
+          </p>
+
+          <div
+            class="my-3 py-3 text-center rounded-lg border border-c3/40 bg-c3/5"
+          >
+            $$P^{(b)}_{ij} = \begin{cases} 0 & j \leq n_b \\ -\infty & j > n_b
+            \end{cases}$$
+          </div>
+
+          <p class="mt-4">
+            Observe that the index $i$ is absent from the right-hand side of the
+            equation.
+            <span class="hl-c2"
+              >Because the masking criteria are identical for every query,
+              $P^{(b)}$ effectively neutralizes entire columns</span
+            >, whereas $M_{ij}$ depends on both indices and consequently masks a
+            triangular region. Despite having different structural shapes, both
+            masks utilize the same underlying mechanism and are added to the
+            scores prior to the softmax operation:
+          </p>
+          <div
+            class="my-3 py-3 text-center rounded-lg border border-c3/40 bg-c3/5"
+          >
+            $$\operatorname{Attention}\left(Q^{(b)}, K^{(b)}, V^{(b)}\right) =
+            \operatorname{softmax}\!\left(\frac{Q^{(b)} K^{(b)\top}}{\sqrt{d_k}}
+            + M + P^{(b)}\right) V^{(b)}$$
+          </div>
+
+          <p class="mt-4">
+            The matrix $M$ has dimensions $n \times n$ and is shared across the
+            entire batch, as it relies solely on the sequence length. While
+            $P^{(b)}$ is theoretically $n \times n$ as well, its values remain
+            constant down each column. In practice, this is implemented by
+            maintaining a single boolean flag per position for each sentence
+            (totaling $B \times n$ flags) and broadcasting this vector across
+            the rows and the $h$ attention heads.
+          </p>
+
+          <p class="mt-4">
+            Applying both matrices simultaneously is sufficient to mask whatever
+            either individual mask targets, because adding $-\infty$ to any
+            finite score invariably yields $-\infty$. The final loss function is
+            then computed exclusively over positions containing actual words ($i
+            \leq n_b$). Consequently,
+            <b
+              >the computations performed by the padded rows are irrelevant, as
+              those outputs are never utilized by the model</b
+            >.
+          </p>
+
+          <p class="mt-4">Here's the summary to why each matrix is needed:</p>
+          <ul class="mt-3 ml-6 space-y-3 list-disc text-[18px]">
+            <li class="mb-2">
+              <strong>The Padding Mask ($P$):</strong> Handles batching
+              irregularities. It hides the meaningless filler tokens added to
+              the end of shorter sentences so that real words do not pull
+              context from empty space.
+            </li>
+            <li class="mb-2">
+              <strong>The Sequence Mask ($M$):</strong> Handles chronological
+              logic. It hides future tokens (carving out a triangle shape) to
+              ensure the model only attends to a word and the words that came
+              before it, preventing it from "peeking" into the future.
+            </li>
+            <li>
+              <strong>Why both are needed:</strong> They solve two independent
+              problems at the same time. $M$ enforces the left-to-right reading
+              rules for the sequence, while $P$ cleans up the structural
+              artifacts left behind by forcing different-length sentences into a
+              single, uniform batch.
+            </li>
+          </ul>
         </section>
       </div>
 

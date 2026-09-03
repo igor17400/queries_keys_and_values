@@ -90,7 +90,7 @@
             Let's take the word <em>chased</em> from our sentence
             <em>The cat chased the mouse</em>. Its row of weights came out to be
             0.04, 0.18, 0.12, 0.06 and 0.60, and reading that row as a set of
-            relations is enough to spot a problem. A verb eeds its object, and
+            relations is enough to spot a problem. A verb needs its object, and
             <em>mouse</em> takes 0.60 of the row. A verb also needs its subject,
             and <em>cat</em> is left with 0.18. The row is a softmax, so it sums
             to one whatever happens, which means
@@ -98,11 +98,11 @@
               >every point of weight spent on the object is a point not spent on
               the subject</b
             >. What <em>chased</em> receives is a single blend of two different
-            relations. One relation is served well, the other not eally, and
+            relations. One relation is served well, the other not really, and
             both in the same vector.
           </p>
           <p class="mt-4">
-            The obvious direction would be to give th emodel more room and make
+            The obvious direction would be to give the model more room and make
             $d_k$ large, so the query has space to encode the subject relation
             and the object relation at the same time. It does not here, and the
             reason is not capacity. However wide $q$ and $k$ become, the dot
@@ -178,12 +178,12 @@
             here $m$ runs from 1 to $h$, the number of heads, and $h = 3$ in the
             figure above. The same $X$ goes into every head, and no head reads
             what another head produced, so the $h$ runs happen side by side
-            rathen than one after another. Each of them returns an $n \times
+            rather than one after another. Each of them returns an $n \times
             d_v$ matrix, one row per word, exactly as a single head did.
           </p>
           <p class="mt-4">
             That leaves us using two things. Three heads look like three times
-            the parameters and three times the word, and so far no comments have
+            the parameters and three times the work, and so far no comments have
             been made about the cost of this. Each word now walks away with
             three output vectors where before it had just one. So
             <em>chased</em> now holds one answer from head 1, another one from
@@ -222,7 +222,7 @@
             rather than $9 \times 9$, and it turns the $5 \times 9$ sentence
             matrix $X$ into a $5 \times 3$ matrix of queries. This might seem
             unnecessary, but actual models are wider and deeper than our toy
-            example. For instance, the original Transformer taeks
+            example. For instance, the original Transformer takes
             $d_{\text{model}} = 512$ and $h = 8$, which leaves $d_k = d_v = 64$.
           </p>
           <p class="mt-4">
