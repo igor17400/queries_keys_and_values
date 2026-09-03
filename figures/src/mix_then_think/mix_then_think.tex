@@ -1,0 +1,161 @@
+\documentclass[tikz,border=10pt]{standalone}
+\usetikzlibrary{arrows.meta, positioning, calc, decorations.pathreplacing}
+\usepackage{amsmath}
+\usepackage{amssymb}
+
+\begin{document}
+\begin{tikzpicture}[
+    every node/.style={font=\sffamily},
+]
+
+\definecolor{c1}{HTML}{15173D}
+\definecolor{c2}{HTML}{982598}
+\definecolor{c3}{HTML}{E491C9}
+\definecolor{c4}{HTML}{F1E9E9}
+\definecolor{axiscolor}{HTML}{333333}
+\definecolor{labelcolor}{HTML}{6B6472}
+
+% ================================================================
+% VISUAL GRAMMAR
+%   computed tensor : thin outline, tinted fill
+%   learned matrix  : thick outline + corner dot   (as attention_breakdown)
+%
+% The two panels are the SAME layout with two things swapped: what fills
+% the middle region, and how many arrows cross it.
+%
+% Panel origin:  (a) o = 0.00     (b) o = 10.60     divider at x = 9.58
+% Everything below is written o + dx, so the two panels are congruent.
+%
+%   dx  0.00 .. 2.10   the five row boxes   (centre o+1.05, width 2.10)
+%   dx  2.30 .. 6.60   the middle region    (identical extent in both)
+%   dx  7.45 .. 8.55   the five out boxes   (centre o+8.00, width 1.10)
+%
+% Rows, identical y in both panels, 1.30 apart, boxes 0.80 tall:
+%   (1) 5.2   (2) 3.9   (3) 2.6   (4) 1.3   (5) 0.0
+%
+% (a) the middle region is ONE block of c4 with all 25 c2 arrows in it.
+% (b) the middle region is FIVE bands of c4, one per row, never touching.
+%
+% Panel (b) lane content, absolute x, bars 0.28 tall centred on the row:
+%   13.35 .. 13.75  bar of width  9   (0.40 long)
+%   13.75 -> 14.25  arrow, W_1 tie at x = 14.00
+%   14.25 .. 15.85  bar of width 36   (1.60 long, exactly 4x)
+%   15.85 -> 16.35  arrow, W_2 tie at x = 16.10
+%   16.35 .. 16.75  bar of width  9
+% W_1 and W_2 sit below the stack with short dashed stubs that stop under
+% the bottom lane. Nothing vertical crosses the lanes, so no mark in (b)
+% can be mistaken for a connection between rows; "shared" is carried by
+% drawing the two matrices once and by the note at y = -3.05.
+%
+%   y  6.70  panel titles          y  6.15  panel subtitles
+%   y -0.85  the three widths      y -1.75  W_1, W_2 and the legend key
+%   y -2.50  their shapes          y -3.05  the sharing note
+% ================================================================
+
+\def\oA{0.00}
+\def\oB{10.60}
+\def\bandL{2.30}
+\def\bandR{6.60}
+\def\hh{0.43}          % half height of a lane band
+\def\bh{0.14}          % half height of a width bar
+
+\tikzset{
+  rowbox/.style={draw=c1, line width=0.7pt, fill=c1, fill opacity=0.10,
+    text opacity=1, rounded corners=3pt, minimum width=2.1cm,
+    minimum height=0.8cm, font=\sffamily\small, text=c1, inner sep=2pt},
+  outbox/.style={draw=c3, line width=0.7pt, fill=c3, fill opacity=0.26,
+    text opacity=1, rounded corners=3pt, minimum width=1.1cm,
+    minimum height=0.8cm, font=\sffamily\small, text=c3!62!black},
+  learn/.style={draw=axiscolor, line width=1.5pt, fill=c4, text opacity=1,
+    rounded corners=3pt, minimum width=1.4cm, minimum height=0.8cm,
+    font=\sffamily\large, text=axiscolor},
+  band/.style={fill=c4, draw=labelcolor, draw opacity=0.30, line width=0.6pt,
+    rounded corners=4pt},
+  mesh/.style={-{Stealth[length=3.6pt]}, line width=0.55pt, c2, opacity=0.48},
+  lane/.style={-{Stealth[length=4.5pt]}, line width=0.9pt, c1, opacity=0.80},
+  tie/.style={labelcolor, opacity=0.75, line width=0.7pt, dash pattern=on 2pt off 2.5pt},
+  ttl/.style={font=\sffamily\large\bfseries, text=axiscolor, anchor=west},
+  sub/.style={font=\sffamily\small, text=labelcolor, anchor=west},
+  wlab/.style={font=\sffamily\small, text=labelcolor},
+  shp/.style={font=\sffamily\small, text=axiscolor},
+}
+
+\newcommand{\dotmark}[1]{\fill[axiscolor] ($(#1.north west)+(0.13,-0.13)$)
+    circle (0.055);}
+
+% ---------------------------------------------------------------- titles
+\node[ttl] at (\oA, 6.70) {(a)\; $\mathrm{MultiHead}$};
+\node[sub] at (\oA, 6.15) {every row reads every row};
+
+\node[ttl] at (\oB, 6.70) {(b)\; $\mathrm{FFN}$};
+\node[sub] at (\oB, 6.15) {no row reads any other};
+\node[font=\sffamily\small, text=axiscolor, anchor=west] at (\oB+2.35, 6.70)
+    {$\mathrm{FFN}(x) = \phi(x W_1 + b_1) W_2 + b_2$};
+
+% ---------------------------------------------------------------- divider
+\draw[labelcolor, opacity=0.35, line width=0.9pt] (9.58, -3.35) -- (9.58, 7.05);
+
+% ================================================================
+% (a)  one region, twenty-five paths
+% ================================================================
+\foreach \i/\y/\w in {1/5.2/The, 2/3.9/cat, 3/2.6/chased, 4/1.3/the, 5/0.0/mouse} {
+    \node[rowbox] (ain\i) at (\oA+1.05, \y) {\textbf{(\i)}\; \w};
+    \node[outbox] (aout\i) at (\oA+8.00, \y) {\textbf{(\i)}};
+}
+
+\fill[band] (\oA+\bandL, -\hh) rectangle (\oA+\bandR, 5.2+\hh);
+
+\foreach \i in {1,...,5} {
+    \foreach \j in {1,...,5} {
+        \draw[mesh] (ain\i.east) -- (aout\j.west);
+    }
+}
+
+% ================================================================
+% (b)  five lanes, five paths
+% ================================================================
+% short stubs only: they stop below the bottom lane, so no mark ever
+% crosses the lane stack and nothing can be read as a row-to-row path
+\draw[tie] (\oB+3.40, -1.35) -- (\oB+3.40, -0.58);
+\draw[tie] (\oB+5.50, -1.35) -- (\oB+5.50, -0.58);
+
+\foreach \i/\y/\w in {1/5.2/The, 2/3.9/cat, 3/2.6/chased, 4/1.3/the, 5/0.0/mouse} {
+    \node[rowbox] (bin\i) at (\oB+1.05, \y) {\textbf{(\i)}\; \w};
+    \node[outbox] (bout\i) at (\oB+8.00, \y) {\textbf{(\i)}};
+
+    \fill[band] (\oB+\bandL, \y-\hh) rectangle (\oB+\bandR, \y+\hh);
+
+    % width 9 -> width 36 -> width 9, the bars drawn to scale
+    \foreach \bl/\br in {2.75/3.15, 3.65/5.25, 6.15/6.55} {
+        \fill[c1, opacity=0.32]
+            (\oB+\bl, \y-\bh) rectangle (\oB+\br, \y+\bh);
+        \draw[c1, opacity=0.55, line width=0.5pt]
+            (\oB+\bl, \y-\bh) rectangle (\oB+\br, \y+\bh);
+    }
+    \draw[lane] (\oB+2.12, \y) -- (\oB+2.73, \y);
+    \draw[lane] (\oB+3.17, \y) -- (\oB+3.63, \y);
+    \draw[lane] (\oB+5.27, \y) -- (\oB+6.13, \y);
+    \draw[lane] (\oB+6.57, \y) -- (\oB+7.43, \y);
+}
+
+% the three widths, named once, under the bottom lane
+\node[wlab] at (\oB+2.95, -0.85) {$9$};
+\node[wlab] at (\oB+4.45, -0.85) {$d_{\text{ff}} = 36$};
+\node[wlab] at (\oB+6.35, -0.85) {$9$};
+
+% the two shared matrices, drawn once
+\node[learn] (W1) at (\oB+3.40, -1.75) {$W_1$};  \dotmark{W1}
+\node[learn] (W2) at (\oB+5.50, -1.75) {$W_2$};  \dotmark{W2}
+\node[shp] at (\oB+3.40, -2.50) {$9 \times 36$};
+\node[shp] at (\oB+5.50, -2.50) {$36 \times 9$};
+\node[font=\sffamily\small, text=labelcolor] at (\oB+4.45, -3.05)
+    {the same $W_1$ and $W_2$ for every row};
+
+% ---------------------------------------------------------------- legend
+% the thick outline and corner dot mean "learned matrix"; the key sits
+% beside the only two learned matrices in the figure, both in panel (b)
+\node[font=\sffamily\small, text=labelcolor, anchor=west]
+    at (\oB+6.30, -1.75) {learned matrix};
+
+\end{tikzpicture}
+\end{document}

@@ -425,6 +425,266 @@
             </p>
           </div>
         </section>
+
+        <section>
+          <h2 class="text-2xl font-semibold text-ink dark:text-white mb-4">
+            Computing the vectors instead of storing them
+          </h2>
+          <p>
+            Both of those issues come from the same place,
+            <em>storing</em> the positional vectors in a static lookup table. By
+            definition, a table possesses a finite capacity, and its
+            independently initialized rows lack any intrinsic relationship. The
+            solution we would like therefore is to eliminate storage entirely.
+            If the vector for a given position $p$ is instead
+            <b>computed dynamically</b> via some function, that capacity
+            constraints would vanish, as there would be no row to exhaust. Even
+            better, the relationship between neighbouring positions (like 3 and
+            4) would be inherently encoded within the function itseld,
+            eliminating the problem above of the model to learn proximity during
+            training.
+          </p>
+          <p class="mt-4">
+            One option is <b>binary encoding</b>: write the position in base 2
+            and map its bits to the vector coordinates (e.g., position 1 is
+            $001$, 2 is $010$). Because each coordinate is strictly 0 or 1, it
+            never overwhelms the semantic content, yet guarantees a unique
+            pattern for every position. The bits alternate at increasing
+            frequencies for example every step, every two steps, every four.
+            This scaling is highly efficient:
+            <span class="hl-c2"
+              >$d$ coordinates can encode $2^d$ positions, whereas a standard
+              table of the same width only holds $d$</span
+            >.
+          </p>
+
+          <p class="mt-4">
+            The problem is that this discrete pattern lacks gradients. And we
+            have already seen that we should not make our gradients harder (<a
+              href="dictionary_analogy.html"
+              class="text-c2 hover:text-c3 transition-colors"
+              >section 02</a
+            >)! Jumping strictly between 0 and 1 leaves no smooth slope for the
+            model to learn from. Furthermore, the mathematical distances are
+            erratic. For example, adjacent positions 7 ($0111$) and 8 ($1000$)
+            differ in every single coordinate, while positions 0 ($0000$) and 8
+            ($1000$) differ by only one bit despite being eight steps apart.
+            Ultimately, physical nearness in the sentence and mathematical
+            nearness in the encoding become completely disconnected.
+          </p>
+
+          <p class="mt-4">
+            Before discarding the binary idea entirely, notice what worked:
+            coordinates changing at different rates, from fast to slow. This
+            underlying structure is exactly what we need. The only flaw is the
+            abrupt jumping. A flipping bit is just a square wave, which is
+            essentially a continuous wave forced into sharp corners. By
+            replacing each bit with a smooth wave of the same wavelength, the
+            coordinate now glides seamlessly between $-1$ and $1$ across the
+            sentence instead of snapping between two integers.
+            <span class="hl-c2"
+              >Every property we liked survives, and the erratic jumping
+              disappears</span
+            >.
+          </p>
+
+          <figure class="my-10 flex flex-col items-center">
+            <img
+              src="../figures/build/binary_to_sinusoid.svg"
+              alt="Four groups stacked. In each, a row of binary cells for positions 0 to 15 sits directly above a smooth wave of the same period. The top bit alternates every position and its wave is the fastest; each group below turns over half as often. A dashed line at the boundary between positions 7 and 8 marks where every bit flips at once, while the waves cross it smoothly."
+              class="w-full max-w-3xl"
+            />
+            <figcaption class="mt-3 text-sm text-muted text-center max-w-2xl">
+              The graphic compares the transition from discrete binary encodings
+              to continuous sinusoidal waves. Each discrete bit sequence is
+              paired with a corresponding sine wave of identical frequency. For
+              instance, a bit that flips every two steps turns into a wave that
+              completes a cycle every two steps. Each discrete bit sequence is
+              paired with a corresponding sine wave of identical frequency. For
+              instance, a bit that flips every two steps turns into a wave that
+              completes a cycle every two steps. The overall rhythm doesn't
+              change, but look at the dashed line between position 7 and 8. In
+              the binary system, every single bit flips at once, causing a
+              massive jump. In contrast, the continuous sine waves goes through
+              the same boundary smoothly, eliminating that abrupt jump.
+            </figcaption>
+          </figure>
+        </section>
+
+        <section>
+          <h2 class="text-2xl font-semibold text-ink dark:text-white mb-4">
+            Sinusoidal Positional Encoding (PE)
+          </h2>
+          <p>
+            To formalize this approach, we group the coordinates of the
+            positional vector into pairs. Each pair, indexed by $j$, consists of
+            a sine function and a cosine function that oscillate at an identical
+            frequency:
+          </p>
+
+          <div
+            class="my-3 py-3 text-center rounded-lg border border-c3/40 bg-c3/5"
+          >
+            $$PE(p, 2j) = \sin(\omega_j \, p), \quad PE(p, 2j + 1) =
+            \cos(\omega_j \, p)$$
+          </div>
+
+          <p class="mt-4">where</p>
+
+          <div
+            class="my-3 py-3 text-center rounded-lg border border-c3/40 bg-c3/5"
+          >
+            $$\omega_j = \frac{1}{10000^{2j/d_{\text{model}}}}$$
+          </div>
+
+          <p class="mt-4">
+            In these equations, $p$ represents the absolute position within the
+            sequence. The index $j$ iterates from $0$ up to $d_{\text{model}}/2
+            - 1$, ensuring the pairs populate the entire dimensionality of the
+            vector. The term $\omega_j$ dictates the specific angular frequency
+            (the rate of turning) for pair $j$. Crucially, this mechanism
+            contains no trainable parameters. It is a
+            <b>deterministic function</b>, meaning that an input at any position
+            (whether 5 or 5,000,000) its corresponding positional vector is
+            dynamically computed.
+          </p>
+
+          <div
+            class="my-8 panel-c4 rounded-xl border-l-4 border-l-c2 px-7 py-6"
+          >
+            <p
+              class="text-xs uppercase tracking-[0.2em] text-c2 font-semibold mb-3"
+            >
+              Context length, revisited
+            </p>
+            <p class="text-ink dark:text-white text-lg leading-relaxed mb-3">
+              If the formula answers for any position at all, then the wall we
+              met a few paragraphs ago is gone. There is no $n_{\text{max}}$
+              here, no last row to run out of. So why does LLMs have a context
+              length?
+            </p>
+            <p class="text-ink dark:text-white text-lg leading-relaxed mb-3">
+              Because two other walls were standing behind that one. The
+              <b>first</b> is training: a model has only ever seen sequences up
+              to a certain length, and the attention patterns it learned there
+              do not survive far outside that range. The encoding is perfectly
+              well defined at position 5,000,000, but the model has never once
+              been asked to read anything of the sort. The <b>second</b> is
+              cost. Attention compares every position with every other, so the
+              work grows with the <b>square</b> of the length, which is what
+              <a
+                href="complexity.html"
+                class="text-c2 hover:text-c3 transition-colors"
+                >section 11</a
+              >
+              is about.
+            </p>
+            <p class="text-ink dark:text-white text-lg leading-relaxed">
+              This is also why so much recent work on long context is about
+              stretching a trained model's positions to cover a wider window,
+              rather than about inventing a new encoding.
+            </p>
+          </div>
+        </section>
+
+        <section>
+          <h2 class="text-2xl font-semibold text-ink dark:text-white mb-4">
+            Encoding Relative Distance
+          </h2>
+          <p>
+            We already analysed why the previous positional schemes failed, and
+            in all those setups the model had no way to ask for something like
+            <em>the word three places back</em>. This is a fatal flaw because
+            relative distance is crucial for languages. Like finding the
+            adjective right before a noun, or the subject tied to a specific
+            verb. So the real test for the sine waves isn't just that they stay
+            within numerical bounds or handle infinetly long texts. The main
+            interest now is whether it supports relative attention, enabling the
+            model to explicitly express a relational target like
+            <em>look three positions to my left</em>.
+          </p>
+          <p class="mt-4">
+            For example, if a query at position 10 needs to look back at a
+            target word at position 7, the distance between that specific pair
+            of interacting words needs to hold true wherever they happen to be.
+            Whether the query and target sit at 10 and 7, or at 40 and 37.
+            Therefore, the model does not need to learn a specific fact about
+            position 10. Instead, it needs a
+            <b>consistent operation that can shift any given query position</b>
+            exactly three spaces backward to find its target, working the exact
+            same way everywhere in the sentence. If the architecture provides
+            that consistent operation, the model can learn the relationship once
+            and confidently apply it anywhere.
+          </p>
+          <p class="mt-4">
+            That operation exists, and it is the exact reason the formula pairs
+            sines and cosines together. Take a single pair turning at frequency
+            $\omega_j$, and look at what happens when we shift the position from
+            $p$ to $p + k$:
+          </p>
+
+          <div
+            class="my-3 py-3 text-center rounded-lg border border-c3/40 bg-c3/5"
+          >
+            $$\begin{pmatrix} \sin\omega_j(p+k) \\ \cos\omega_j(p+k)
+            \end{pmatrix} = \begin{pmatrix} \cos\omega_j \, k & \sin\omega_j \,
+            k \\ -\sin\omega_j \, k & \cos\omega_j \, k \end{pmatrix}
+            \begin{pmatrix} \sin\omega_j \, p \\ \cos\omega_j \, p
+            \end{pmatrix}$$
+          </div>
+
+          <p class="mt-4">
+            Look closely at that matrix: every single piece of it is built using
+            only the jump distance $k$. The starting spot $p$ is not present at
+            all at the matrix. Moving three steps over is the exact same little
+            rotation whether you start at word 7, 37, or 3997. To shift the
+            whole positional vector, you just rotate every pair by its own angle
+            $\omega_j \, k$.
+            <span class="hl-c2"
+              >So, <em>look three to my left</em> actually translates perfectly
+              into math: it's a fixed linear map that works the exact same way
+              no matter where you are in the sentence</span
+            >.
+          </p>
+          <details class="my-6 panel-c4 rounded-xl">
+            <summary
+              class="px-6 py-4 cursor-pointer text-ink dark:text-white font-medium"
+            >
+              Aside: Where the Matrix Comes From
+            </summary>
+            <div class="px-6 pb-6 space-y-4 text-gray-700 dark:text-gray-300">
+              <p>
+                It comes directly from standard angle addition formulas. Let's
+                write $a = \omega_j \, p$ for the angle the pair has already
+                reached, and $b = \omega_j \, k$ for the extra rotation added by
+                the shift:
+              </p>
+              <div class="my-4 py-2 text-center">
+                $$\sin(a + b) = \sin a \cos b + \cos a \sin b$$
+              </div>
+              <div class="my-4 py-2 text-center">
+                $$\cos(a + b) = \cos a \cos b - \sin a \sin b$$
+              </div>
+              <p>
+                Each right side is just a weighted mix of $\sin a$ and $\cos a$,
+                which are the two numbers the pair already holds. The weights
+                are built entirely from $b$. If we collect these two formulas
+                into a single matrix product, we get the result shown above.
+              </p>
+              <p>
+                That matrix acts as a rotation. Its columns are unit length and
+                at right angles, meaning it turns the pair without stretching or
+                shrinking it. Therefore, the positional vector as a whole is
+                rotated block by block, with each pair turning through its own
+                angle $\omega_j \, k$. Since
+                <span class="hl-c2"
+                  >a rotation is invertible and loses nothing</span
+                >, shifting the position doesn't destroy any information about
+                where we originally started.
+              </p>
+            </div>
+          </details>
+        </section>
       </div>
 
       <!-- Navigation -->

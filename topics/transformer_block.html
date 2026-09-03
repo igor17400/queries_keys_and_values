@@ -75,10 +75,103 @@
       <div
         class="space-y-12 text-gray-700 dark:text-gray-300 leading-relaxed text-[18px]"
       >
-        <!-- TODO: written together. See figures/FIGURE_PLAN.md for the
-             schematics planned for this section. -->
+        <!-- TODO: prose not written yet. The figures below are placed in the
+             reading order planned for the section, so they can be looked at
+             before the paragraphs around them exist. See figures/FIGURE_PLAN.md
+             section 10 for the brief each one was drawn from. -->
         <section>
-          <p class="text-muted italic">Not written yet.</p>
+          <p class="text-muted italic">
+            Figures only. The prose is not written yet.
+          </p>
+
+          <!-- Subsection 1: attention moves, it does not compute -->
+          <figure class="my-10 flex flex-col items-center">
+            <img
+              src="../figures/build/blend_stays_inside.svg"
+              alt="Left: the five value vectors of the sentence drawn as points in the plane with their convex hull shaded, and the answer that chased came away with sitting inside that hull, nearest the value of mouse. Right: the same hull with the answer moved outside it by the feed-forward network."
+              class="w-full max-w-2xl"
+            />
+            <figcaption class="mt-3 text-sm text-muted text-center max-w-xl">
+              A softmax row is positive and sums to one, so one head's answer is
+              always a blend of the value vectors and can never leave the region
+              they span. The feed-forward network is what lets a position land
+              somewhere new.
+            </figcaption>
+          </figure>
+
+          <!-- Subsection 2: a small network at every position -->
+          <figure class="my-10 flex flex-col items-center">
+            <img
+              src="../figures/build/mix_then_think.svg"
+              alt="Two panels over the same five word rows. On the left, attention, where every row is joined to every other row by an arrow. On the right, the feed-forward network, where each row passes through its own copy of the same two-layer network and no arrow crosses between rows."
+              class="w-full max-w-2xl"
+            />
+            <figcaption class="mt-3 text-sm text-muted text-center max-w-xl">
+              The two sublayers have exactly complementary jobs. Attention is
+              the only place positions talk to each other, and the feed-forward
+              network is the only place a position is transformed. A block is
+              one of each.
+            </figcaption>
+          </figure>
+
+          <!-- Subsection 3: adding instead of replacing -->
+          <figure class="my-10 flex flex-col items-center">
+            <img
+              src="../figures/build/residual_stream.svg"
+              alt="The vector of the word chased drawn as an unbroken line running through three blocks. Each sublayer branches off the line, does its work, and returns to be added back, so nothing ever sits on the line itself."
+              class="w-full max-w-3xl"
+            />
+            <figcaption class="mt-3 text-sm text-muted text-center max-w-xl">
+              Every sublayer hangs off the stream rather than sitting in it. It
+              reads a copy, and what it returns is added. The stream is a
+              running total that nothing overwrites, and the addition is what
+              forces every sublayer to give back the width it was given.
+            </figcaption>
+          </figure>
+
+          <!-- Subsection 5: where the norm sits -->
+          <figure class="my-10 flex flex-col items-center">
+            <img
+              src="../figures/build/prenorm_postnorm.svg"
+              alt="Two identical three-block stacks. In the post-norm version the layer normalisation box sits on the main line, so a path traced along the stack passes through all six of them. In the pre-norm version the same box sits on the branch instead, leaving the main line unbroken."
+              class="w-full max-w-3xl"
+            />
+            <figcaption class="mt-3 text-sm text-muted text-center max-w-xl">
+              One box moved off the main line. That is the whole difference, and
+              it is what keeps the unbroken path of the previous figure alive
+              through a deep stack.
+            </figcaption>
+          </figure>
+
+          <!-- Subsection 6: the block, assembled -->
+          <figure class="my-10 flex flex-col items-center">
+            <img
+              src="../figures/build/transformer_block.svg"
+              alt="One transformer block with every shape annotated: the input passes through layer normalisation into multi-head attention and is added back, then through a second layer normalisation into the feed-forward network and is added back again."
+              class="w-full max-w-3xl"
+            />
+            <figcaption class="mt-3 text-sm text-muted text-center max-w-2xl">
+              The block in full: two sublayers, two norms, two additions, and a
+              width that never changes. This is the residual stream two figures
+              back, with the norms placed where the previous figure said to put
+              them.
+            </figcaption>
+          </figure>
+
+          <!-- Subsection 7: the whole model -->
+          <figure class="my-10 flex flex-col items-center">
+            <img
+              src="../figures/build/full_stack.svg"
+              alt="The complete model: token identifiers fetch their embeddings, position vectors are added, the result passes through L stacked blocks and a final layer normalisation, and a linear map to the vocabulary followed by a softmax produces a distribution over the next word."
+              class="w-full max-w-3xl"
+            />
+            <figcaption class="mt-3 text-sm text-muted text-center max-w-2xl">
+              Everything the tutorial has built, in one chain. The distribution
+              drawn at the bottom belongs to position <strong>(3)</strong>
+              <em>chased</em>, and it is the guess that section 08 asked that
+              position for.
+            </figcaption>
+          </figure>
         </section>
       </div>
 

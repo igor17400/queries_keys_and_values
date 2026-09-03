@@ -1,0 +1,135 @@
+\documentclass[tikz,border=10pt]{standalone}
+\usetikzlibrary{arrows.meta, positioning, calc}
+
+% ---------------------------------------------------------------- colours
+\definecolor{c1}{HTML}{15173D}   % structure, the hull outline, the axes
+\definecolor{c2}{HTML}{982598}   % the operative step: the answer point, the FFN
+\definecolor{c3}{HTML}{E491C9}   % the value vectors
+\definecolor{c4}{HTML}{F1E9E9}
+\definecolor{axiscolor}{HTML}{333333}
+\definecolor{labelcolor}{HTML}{6B6472}
+
+% ================================================================
+% Geometry, fixed before any TikZ was written.
+%
+% Two of the d_v value dimensions, drawn in the plane. n = 5 value rows,
+% placed so the hull is a strictly convex pentagon (all five cross products
+% of consecutive edges are negative, checked by hand):
+%
+%   v1  (1) The      (0.7, 3.3)   w 0.04
+%   v2  (2) cat      (2.9, 4.3)   w 0.18
+%   v3  (3) chased   (5.4, 2.9)   w 0.12
+%   v4  (4) the      (4.5, 0.5)   w 0.06
+%   v5  (5) mouse    (1.3, 0.7)   w 0.60
+%
+% The answer row (3) chased is sum_j w_j v_j, computed, not eyeballed:
+%   x = .04(0.7) + .18(2.9) + .12(5.4) + .06(4.5) + .60(1.3)
+%     = 0.028 + 0.522 + 0.648 + 0.270 + 0.780 = 2.248
+%   y = .04(3.3) + .18(4.3) + .12(2.9) + .06(0.5) + .60(0.7)
+%     = 0.132 + 0.774 + 0.348 + 0.030 + 0.420 = 1.704
+%   -> (2.248, 1.704).  Distances: v5 1.38, v1 2.22, v4 2.55, v2 2.68, v3 3.37,
+%   so it sits nearest (5) mouse without landing on it.
+%
+% The faint grey scatter is 16 further convex combinations of the same five
+% points, i.e. what other weight rows would reach. All lie at least 0.25 from
+% the boundary and 0.6 from the answer point, and clear of the labels.
+%
+% Vertical plan (panel local): title 5.6, scope note 5.2, hull top 4.3,
+% hull bottom 0.5, axis gnomon corner (-1.0, -0.75), axis caption under the
+% corner at (-1.0, -1.00) so it names the plane, not the horizontal arm only.
+% Panel (b) is panel (a) shifted by dx = 10.4, with the answer point moved
+% along the FFN arrow to (7.0, 1.4), which leaves the hull through the
+% v3--v4 edge at x = 4.91.
+% ================================================================
+
+\def\dx{10.4}
+\def\hull{(0.7,3.3) -- (2.9,4.3) -- (5.4,2.9) -- (4.5,0.5) -- (1.3,0.7) -- cycle}
+\def\scatter{3.36/2.11, 2.39/3.43, 1.72/2.17, 2.66/2.42, 3.15/3.61,
+             1.95/1.05, 4.05/2.98, 4.31/2.28, 3.55/2.59, 1.60/3.17,
+             2.03/2.83, 4.88/2.54, 3.90/0.95, 3.02/3.04, 1.48/1.36, 3.58/3.31}
+
+\begin{document}
+\begin{tikzpicture}[
+    every node/.style={font=\sffamily},
+    hullshape/.style={fill=c4, draw=c1, draw opacity=0.45, line width=1pt,
+                      line join=round},
+    vdot/.style={circle, fill=c3, draw=c3!60!black, draw opacity=0.5,
+                 line width=0.4pt, inner sep=0pt, minimum size=5.2pt},
+    faint/.style={circle, fill=labelcolor, fill opacity=0.30, inner sep=0pt,
+                  minimum size=3pt},
+    ans/.style={circle, fill=c2, draw=white, line width=0.9pt, inner sep=0pt,
+                minimum size=7.5pt},
+    vlab/.style={font=\sffamily\scriptsize, text=c1, align=center,
+                 inner sep=1.5pt, line width=0pt},
+    ax/.style={-{Stealth[length=4.5pt]}, line width=0.7pt, axiscolor,
+               opacity=0.55},
+    axlab/.style={font=\sffamily\scriptsize, text=labelcolor, anchor=west},
+    title/.style={font=\sffamily\small\bfseries, text=axiscolor, anchor=west},
+    step/.style={font=\sffamily\small\bfseries, text=c2, anchor=west},
+    note/.style={font=\sffamily\scriptsize, text=labelcolor, anchor=west},
+    ffn/.style={-{Stealth[length=7pt]}, line width=1.5pt, c2},
+]
+
+% ---------------------------------------------------------------- one panel
+% drawn twice, identically, so the moved point is the only difference
+\foreach \s in {0, \dx} {
+  \begin{scope}[shift={(\s,0)}]
+    \fill[hullshape] \hull;
+
+    % other weight rows reach the rest of the region
+    \foreach \x/\y in \scatter { \node[faint] at (\x,\y) {}; }
+
+    % the five value rows
+    \node[vdot] at (0.7,3.3) {};
+    \node[vdot] at (2.9,4.3) {};
+    \node[vdot] at (5.4,2.9) {};
+    \node[vdot] at (4.5,0.5) {};
+    \node[vdot] at (1.3,0.7) {};
+
+    \node[vlab, anchor=east]       at (0.50,3.34) {$v_1$ (1) The\\[-1pt]
+                                     \textcolor{c2}{0.04}};
+    \node[vlab, anchor=south]      at (2.90,4.46) {$v_2$ (2) cat\\[-1pt]
+                                     \textcolor{c2}{0.18}};
+    \node[vlab, anchor=west]       at (5.60,2.90) {$v_3$ (3) chased\\[-1pt]
+                                     \textcolor{c2}{0.12}};
+    \node[vlab, anchor=north]      at (4.62,0.30) {$v_4$ (4) the\\[-1pt]
+                                     \textcolor{c2}{0.06}};
+    \node[vlab, anchor=east]       at (1.12,0.72) {$v_5$ (5) mouse\\[-1pt]
+                                     \textcolor{c2}{0.60}};
+
+    % the slice, named
+    \draw[ax] (-1.0,-0.75) -- (0.05,-0.75);
+    \draw[ax] (-1.0,-0.75) -- (-1.0,0.30);
+    \node[axlab, anchor=north west] at (-1.05,-0.98)
+        {two of the $d_v$ value dimensions};
+  \end{scope}
+}
+
+% ---------------------------------------------------------------- panel (a)
+\node[step]  at (-1.75, 5.60) {(a)};
+\node[title] at (-1.20, 5.60) {the blend, inside the hull};
+\node[note]  at (-1.75, 5.10) {one head, before $W_O$};
+
+\node[ans] at (2.248,1.704) {};
+\node[font=\sffamily\scriptsize, text=c2, anchor=north west, align=left,
+      inner sep=3pt]
+    at (2.42,1.72) {$\sum_j w_j v_j$\\[1pt]
+                    \textcolor{labelcolor}{row (3) chased}};
+
+% ---------------------------------------------------------------- panel (b)
+\node[step]  at ({\dx-1.75}, 5.60) {(b)};
+\node[title] at ({\dx-1.20}, 5.60) {the same blend, moved out};
+
+\begin{scope}[shift={(\dx,0)}]
+    \node[circle, draw=c2, draw opacity=0.80, dash pattern=on 2.6pt off 2.2pt,
+          line width=1.1pt, inner sep=0pt, minimum size=8.5pt]
+          at (2.248,1.704) {};
+    % 3. FFN named on its own path, at the midpoint, not floating above it
+    \draw[ffn] (2.52,1.69) -- (6.78,1.42)
+        node[midway, above=2.5pt, font=\sffamily\small\bfseries, text=c2,
+             inner sep=1pt] {$\mathrm{FFN}$};
+    \node[ans] at (7.0,1.4) {};
+\end{scope}
+
+\end{tikzpicture}
+\end{document}
