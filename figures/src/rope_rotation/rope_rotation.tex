@@ -1,0 +1,61 @@
+\documentclass[tikz,border=12pt]{standalone}
+\usetikzlibrary{arrows.meta, positioning, calc, decorations.pathreplacing}
+\usepackage{amsmath}
+\begin{document}
+\begin{tikzpicture}[
+    every node/.style={font=\sffamily},
+    vec/.style={font=\sffamily\small},
+    cap/.style={font=\sffamily\small, text=c1},
+    sub/.style={font=\sffamily\scriptsize, text=labelcolor},
+    note/.style={font=\sffamily\scriptsize, text=c2},
+]
+\definecolor{c1}{HTML}{15173D}
+\definecolor{c2}{HTML}{982598}
+\definecolor{c3}{HTML}{E491C9}
+\definecolor{c4}{HTML}{F1E9E9}
+\definecolor{labelcolor}{HTML}{6B6472}
+
+\path (-2.00, -3.35) rectangle (9.40, 2.35);
+
+\fill[c4, opacity=0.55] (0.00, 0) circle (1.55);
+\draw[labelcolor, opacity=0.35, line width=0.4pt] (0.00, 0) circle (1.25);
+\draw[labelcolor, opacity=0.25, line width=0.3pt] (-1.43,0) -- (1.43,0);
+\draw[labelcolor, opacity=0.25, line width=0.3pt] (0.00,-1.43) -- (0.00,1.43);
+\draw[c2, opacity=0.30, line width=3.0pt] (0.00,0) ++(38.0:0.52) arc (38.0:124.0:0.52);
+\draw[-{Stealth[length=6pt]}, c1, line width=1.5pt] (0.00,0) -- (0.985,0.770);
+\node[vec, text=c1] at (1.237,0.967) {$q_{1}$};
+\draw[-{Stealth[length=6pt]}, c2, line width=1.5pt] (0.00,0) -- (-0.699,1.036);
+\node[vec, text=c2] at (-0.878,1.302) {$k_{3}$};
+\node[cap] at (0.00, -1.97) {positions 1 and 3};
+\node[sub] at (0.00, -2.31) {rotated by $1\omega$ and $3\omega$};
+\fill[c4, opacity=0.55] (3.65, 0) circle (1.55);
+\draw[labelcolor, opacity=0.35, line width=0.4pt] (3.65, 0) circle (1.25);
+\draw[labelcolor, opacity=0.25, line width=0.3pt] (2.22,0) -- (5.08,0);
+\draw[labelcolor, opacity=0.25, line width=0.3pt] (3.65,-1.43) -- (3.65,1.43);
+\draw[c2, opacity=0.30, line width=3.0pt] (3.65,0) ++(110.0:0.52) arc (110.0:196.0:0.52);
+\draw[-{Stealth[length=6pt]}, c1, line width=1.5pt] (3.65,0) -- (3.222,1.175);
+\node[vec, text=c1] at (3.113,1.475) {$q_{5}$};
+\draw[-{Stealth[length=6pt]}, c2, line width=1.5pt] (3.65,0) -- (2.448,-0.345);
+\node[vec, text=c2] at (2.141,-0.433) {$k_{7}$};
+\node[cap] at (3.65, -1.97) {positions 5 and 7};
+\node[sub] at (3.65, -2.31) {rotated by $5\omega$ and $7\omega$};
+\fill[c4, opacity=0.55] (7.30, 0) circle (1.55);
+\draw[labelcolor, opacity=0.35, line width=0.4pt] (7.30, 0) circle (1.25);
+\draw[labelcolor, opacity=0.25, line width=0.3pt] (5.87,0) -- (8.73,0);
+\draw[labelcolor, opacity=0.25, line width=0.3pt] (7.30,-1.43) -- (7.30,1.43);
+\draw[c2, opacity=0.30, line width=3.0pt] (7.30,0) ++(182.0:0.52) arc (182.0:268.0:0.52);
+\draw[-{Stealth[length=6pt]}, c1, line width=1.5pt] (7.30,0) -- (6.051,-0.044);
+\node[vec, text=c1] at (5.731,-0.055) {$q_{9}$};
+\draw[-{Stealth[length=6pt]}, c2, line width=1.5pt] (7.30,0) -- (7.256,-1.249);
+\node[vec, text=c2] at (7.245,-1.569) {$k_{11}$};
+\node[cap] at (7.30, -1.97) {positions 9 and 11};
+\node[sub] at (7.30, -2.31) {rotated by $9\omega$ and $11\omega$};
+
+\node[note, anchor=south] at (3.65, 1.90)
+    {every pair is two apart, so every angle between them is the same};
+\draw[decorate, decoration={brace, mirror, amplitude=5pt}, c2, line width=0.8pt]
+    (-1.55, -2.95) -- (8.85, -2.95);
+\node[note, anchor=north] at (3.65, -3.14)
+    {the shaded angle never changes, so neither does $q \cdot k$};
+\end{tikzpicture}
+\end{document}

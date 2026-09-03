@@ -598,7 +598,7 @@
             relative distance is crucial for languages. Like finding the
             adjective right before a noun, or the subject tied to a specific
             verb. So the real test for the sine waves isn't just that they stay
-            within numerical bounds or handle infinetly long texts. The main
+            within numerical bounds or handle infinitely long texts. The main
             interest now is whether it supports relative attention, enabling the
             model to explicitly express a relational target like
             <em>look three positions to my left</em>.
@@ -666,10 +666,23 @@
                 $$\cos(a + b) = \cos a \cos b - \sin a \sin b$$
               </div>
               <p>
-                Each right side is just a weighted mix of $\sin a$ and $\cos a$,
-                which are the two numbers the pair already holds. The weights
-                are built entirely from $b$. If we collect these two formulas
-                into a single matrix product, we get the result shown above.
+                The step that produces the matrix is to line both identities up
+                in terms of the same two quantities, $\sin a$ and $\cos a$, and
+                in that order, so that they match how the pair is stacked:
+              </p>
+              <div class="my-4 py-2 text-center">
+                $$\sin(a+b) = (\cos b)\,\sin a + (\sin b)\,\cos a$$
+              </div>
+              <div class="my-4 py-2 text-center">
+                $$\cos(a+b) = (-\sin b)\,\sin a + (\cos b)\,\cos a$$
+              </div>
+              <p>
+                Each line is now a weighted sum of $\sin a$ and $\cos a$ whose
+                weights are built from $b$ alone, and two such lines are exactly
+                a matrix times a vector. The $-\sin b$ in the bottom left is the
+                whole cost of that reordering: the cosine identity arrives with
+                $\cos a$ written first, and swapping the two terms to put $\sin
+                a$ in front is what carries the minus sign into place.
               </p>
               <p>
                 That matrix acts as a rotation. Its columns are unit length and
@@ -684,6 +697,213 @@
               </p>
             </div>
           </details>
+        </section>
+
+        <section>
+          <h2 class="text-2xl font-semibold text-ink dark:text-white mb-4">
+            Rotary Position Embedding (RoPE)
+          </h2>
+          <p>
+            Notice carefully what we have shown and what we have not. A shift is
+            a fixed rotation, so a relative offset is something the model
+            <em>can</em> express. Nothing so far makes it do so. Remember where
+            the positional vector enters we add it to $X$, and only afterwards
+            does $X$ meet the matrices $W_Q$ and $W_K$. So the precise rotation
+            is what those two matrices <em>receive</em>, and nothing whatsoever
+            obliges them to pass it on.
+            <span class="hl-c2"
+              >The rotation is a property of the input, not a promise about the
+              score</span
+            >. In practice sinusoids and learned tables perform about the same,
+            and almost every model since 2017 has gone somewhere else.
+          </p>
+
+          <details class="my-6 panel-c4 rounded-xl">
+            <summary
+              class="px-6 py-4 cursor-pointer text-ink dark:text-white font-medium"
+            >
+              Aside: What the Projections Do to the Structure
+            </summary>
+            <div class="px-6 pb-6 space-y-4 text-gray-700 dark:text-gray-300">
+              <p>
+                This analyses where the rotation information goes. The score
+                between positions $m$ and $n$ is a query meeting a key, and both
+                are projections of the same rows of $X$:
+              </p>
+              <div class="my-4 py-2 text-center">
+                $$q_m \cdot k_n = (x_m W_Q)(x_n W_K)^{\top} = x_m\,\underbrace{
+                W_Q W_K^{\top}}_{M}\,x_n^{\top}$$
+              </div>
+              <p>
+                Everything the model learned about matching has collapsed into
+                that single matrix $M$ sitting in the middle. Now remember what
+                a row of $X$ is made of, a word part plus a position part, $x_i
+                = e_i + PE_i$, and multiply it out. A product of two sums gives
+                four terms:
+              </p>
+              <div class="my-4 py-2 text-center overflow-x-auto">
+                $$\begin{aligned} x_m M x_n^{\top} &= \underbrace{e_m M
+                e_n^{\top}}_{\text{word~against~word}} \\[6pt] &+
+                \underbrace{e_m M PE_n^{\top}}_{\text{word~against~place}}
+                \\[6pt] &+ \underbrace{PE_m M
+                e_n^{\top}}_{\text{place~against~word}} \\[6pt] &+
+                \underbrace{PE_m M PE_n^{\top}}_{\text{place~against~place}}
+                \end{aligned}$$
+              </div>
+              <p>
+                The two middle terms are how a model learns something like
+                <em>this kind of word tends to turn up near the start</em>,
+                matching a word against a region of the sentence. But only the
+                fourth term is about position alone, and it is the only one that
+                could carry our rotation.
+              </p>
+              <p>
+                So does it? Suppose for a moment that $M$ were the identity. The
+                term becomes $PE_m\,PE_n^{\top}$, a row times a column, which is
+                a single number: the dot product $PE_m \cdot PE_n$ of the two
+                positional vectors. And that really is a function of the gap
+                alone:
+              </p>
+              <div class="my-4 py-2 text-center">
+                $$PE_m \cdot PE_n = \sum_j \Big[ \sin(\omega_j m)\sin(\omega_j
+                n) + \cos(\omega_j m)\cos(\omega_j n) \Big] $$ $$PE_m \cdot PE_n
+                = \sum_j \cos\!\big(\omega_j (n - m)\big) $$
+              </div>
+              <p>
+                which is the angle addition formula once more, and every $m$ and
+                $n$ has vanished in favour of $n - m$. The catch is the
+                <em>if</em>.
+                <span class="hl-c2"
+                  >$M$ is not the identity, it is $W_Q W_K^{\top}$, learned from
+                  scratch</span
+                >. Thus this fails in practice because the model inserts its own
+                learned weight matrices between the two encodings. These
+                arbitrary weights disrupt the rotations, breaking the clean
+                cancellation, and nothing in the training process forces the
+                model to preserve that structure.
+              </p>
+              <p>
+                Consequently, while standard sinusoidal encodings feed the model
+                perfectly structured relative distances, the model's subsequent
+                operations frequently
+                <b
+                  >scramble that information before it can influence the final
+                  attention score</b
+                >. Rotary Position Embedding (RoPE) solves this by simply
+                changing the order of operations. By applying the rotation after
+                the model's weights are applied, no learned matrices are trapped
+                in the middle, guaranteeing that the relative distance survives
+                intact.
+              </p>
+            </div>
+          </details>
+
+          <p class="mt-4">
+            The scheme that took over keeps the frequencies and changes where
+            they act. Rather than adding a position vector to $X$ before the
+            projections, we let $W_Q$ and $W_K$ do their work first and then
+            <b>rotate the query and the key</b> by an angle set by their
+            positions. The $\omega_j$ is the same one we already defined. What
+            moves is the place in the pipeline. A query sitting at position $m$
+            becomes $R_m q$, where $R_m$ turns each pair of coordinates by its
+            own angle:
+          </p>
+
+          <div class="my-4 py-2 text-center">
+            $$R_m = \begin{pmatrix} R(m\omega_1) & & \\ & \ddots & \\ & &
+            R(m\omega_{d_k/2}) \end{pmatrix}, \qquad R(\theta) = \begin{pmatrix}
+            \cos\theta & -\sin\theta \\ \sin\theta & \cos\theta \end{pmatrix}$$
+          </div>
+
+          <p class="mt-4">
+            Now the payoff. A rotation does not change a dot product, and
+            turning by $m$ and then by $n$ is the same as turning by $n - m$, so
+            when the rotated query meets the rotated key:
+          </p>
+
+          <div
+            class="my-3 py-3 text-center rounded-lg border border-c3/40 bg-c3/5"
+          >
+            $$\langle R_m q,\; R_n k \rangle = q^{\top} R_m^{\top} R_n k =
+            q^{\top} R_{\,n-m}\, k$$
+          </div>
+
+          <p class="mt-4">
+            The starting positions have cancelled. What survives is $n - m$, the
+            gap between the two words, and nothing else.
+            <span class="hl-c2"
+              >Relative position is no longer something the model is merely able
+              to represent, it is the only thing the score can depend on</span
+            >.
+          </p>
+
+          <figure class="my-10 flex flex-col items-center">
+            <img
+              src="../figures/build/rope_rotation.svg"
+              alt="Three circles. In each, a navy query arrow and a magenta key arrow leave the origin, for the position pairs one and three, five and seven, then nine and eleven. The arrows point in different absolute directions in each circle, but the shaded angle between them is identical in all three."
+              class="w-full max-w-3xl"
+            />
+            <figcaption class="mt-3 text-sm text-muted text-center max-w-2xl">
+              One pair of coordinates, three different places in the sentence.
+              The query and the key both swing round as the positions grow, so
+              nothing about where they point is preserved. The angle
+              <em>between</em> them is, because each pair is two apart, and that
+              angle is the entire score.
+            </figcaption>
+          </figure>
+
+          <p class="mt-4">
+            Two things come free with this. The rotation happens after the
+            projections, so $V$ is never touched and a value goes back to being
+            purely what the word means, rather than partly a statement about
+            where it was standing. And a rotation preserves length, so the
+            positional signal can never grow loud enough to drown the content,
+            which was the very first thing that went wrong when we tried to
+            store an index in a coordinate.
+          </p>
+        </section>
+
+        <section>
+          <h2 class="text-2xl font-semibold text-ink dark:text-white mb-4">
+            What this finally explains
+          </h2>
+          <p>
+            We opened this section with two claims that could not both be true.
+            <a
+              href="self_attention.html"
+              class="text-c2 hover:text-c3 transition-colors"
+              >Section 06</a
+            >
+            said the two copies of <em>the</em> come back from the embedding
+            table identical, and every figure since
+            <a
+              href="scaled_dot_product.html"
+              class="text-c2 hover:text-c3 transition-colors"
+              >section 05</a
+            >
+            gave them weights of 0.04 and 0.06. Both are true now. The rows
+            leave the embedding table identical and they do not stay that way,
+            because something that depends on <b>where</b> they sit is folded in
+            before attention ever sees them.
+            <span class="hl-c2"
+              >Every figure we have drawn since
+              <a
+                href="intro.html"
+                class="text-c2 hover:text-c3 transition-colors"
+                >section 01</a
+              >
+              was quietly assuming this section</span
+            >.
+          </p>
+          <p class="mt-4">
+            The sentence scramble is settled too.
+            <em>The cat chased the mouse</em> and
+            <em>The mouse chased the cat</em> no longer produce the same vectors
+            in a different order, because <em>cat</em> at position 2 and
+            <em>cat</em> at position 5 are no longer the same row going in. The
+            mechanism has not changed at all. We only stopped handing it a bag
+            of words.
+          </p>
         </section>
       </div>
 

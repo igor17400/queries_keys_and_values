@@ -88,7 +88,7 @@ c4**. Never swap these between figures.
 | `two_lookups` | Three grids: the five word vectors (the two copies of *the* identical), the five position vectors (all different), and their sum, in which those two rows differ. Shows that position enters as a second lookup indexed by slot rather than by token, and that adding it is what separates repeated words. |
 | `permutation_equivariance` | Two rows: the sentence, and the same sentence with *cat* and *mouse* swapped, each through the same attention block. Positions **(1)** to **(5)** are fixed in both, only the words move. The outputs hold the same five vectors with two rows traded, and the $\Pi$ entering on the left leaves on the right. Drawn: this is $\mathrm{Attention}(\Pi X) = \Pi\,\mathrm{Attention}(X)$. |
 | `binary_to_sinusoid` | Four bit-rows of a binary counter over positions 0 to 15, each with the smooth wave of the same period drawn directly beneath it. The 7/8 boundary is marked, where every bit flips at once and the waves pass through unbothered. Carries the argument for sinusoids rather than illustrating the result. |
-| `rope_rotation` | Rotary positions as a rotation of the query and key in 2-D planes, and why only relative offsets survive. |
+| `rope_rotation` | One pair of coordinates, three circles, for position pairs (1,3), (5,7) and (9,11). The query (c1) and key (c2) swing to different absolute directions in each, while the shaded angle between them is identical, because every pair is two apart. Draws $\langle R_m q, R_n k\rangle = q^\top R_{n-m} k$. |
 
 ## 10 The Transformer Block
 
