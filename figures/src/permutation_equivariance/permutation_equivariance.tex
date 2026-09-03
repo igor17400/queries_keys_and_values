@@ -1,0 +1,94 @@
+\documentclass[tikz,border=10pt]{standalone}
+\usetikzlibrary{arrows.meta, positioning, calc, fit}
+\usepackage{amsmath}
+\usepackage{amssymb}
+
+\definecolor{c1}{HTML}{15173D}
+\definecolor{c2}{HTML}{982598}
+\definecolor{c3}{HTML}{E491C9}
+\definecolor{c4}{HTML}{F1E9E9}
+\definecolor{axiscolor}{HTML}{333333}
+\definecolor{labelcolor}{HTML}{6B6472}
+
+\begin{document}
+\begin{tikzpicture}[
+    every node/.style={font=\sffamily},
+    tok/.style={
+        rectangle, rounded corners=4pt, minimum width=2.3cm,
+        minimum height=0.78cm, line width=0.9pt,
+        draw=c1!45, fill=c1!6, text=c1!85!black, font=\sffamily\small,
+    },
+    catbox/.style={tok, draw=c1, fill=c1!22, line width=1.2pt},
+    mousebox/.style={tok, draw=c3!85!black, fill=c3!45, line width=1.2pt},
+    outbox/.style={
+        rectangle, rounded corners=4pt, minimum width=2.5cm,
+        minimum height=0.78cm, line width=0.9pt,
+        draw=c1!45, fill=c4, text=c1!85!black, font=\sffamily\small,
+    },
+    catout/.style={outbox, draw=c1, fill=c1!22, line width=1.2pt},
+    mouseout/.style={outbox, draw=c3!85!black, fill=c3!45, line width=1.2pt},
+    attn/.style={
+        rectangle, rounded corners=7pt, minimum width=2.2cm,
+        minimum height=3.4cm, line width=1.3pt,
+        draw=c2, fill=c2!8, text=c2!80!black, font=\sffamily\small,
+    },
+    arr/.style={-{Stealth[length=6pt]}, line width=1.1pt, color=c1!70},
+    pos/.style={font=\sffamily\scriptsize, text=labelcolor},
+    hdr/.style={font=\sffamily\small, text=c1},
+]
+
+% ---------- geometry ----------
+\def\dy{0.88}          % vertical spacing between tokens
+\def\xin{1.15}         % x centre of input column
+\def\xat{6.3}          % x centre of attention box
+\def\xout{11.6}        % x centre of output column
+\def\rowB{-6.0}        % y offset of the second row
+
+% ---------- row A : the original sentence ----------
+\foreach \w/\i/\sty in {The/0/tok, cat/1/catbox, chased/2/tok, the/3/tok, mouse/4/mousebox} {
+    \node[\sty] (a\i) at (\xin, -\i*\dy) {\w};
+}
+\foreach \n/\i in {1/0, 2/1, 3/2, 4/3, 5/4} {
+    \node[pos] at (\xin-1.55, -\i*\dy) {(\n)};
+}
+
+\node[attn] (attnA) at (\xat, -1.76) {Attention};
+
+\foreach \w/\i/\sty in {The/0/outbox, cat/1/catout, chased/2/outbox, the/3/outbox, mouse/4/mouseout} {
+    \node[\sty] (oa\i) at (\xout, -\i*\dy) {$y_{\text{\w}}$};
+}
+
+\draw[arr] (\xin+1.2, -1.76) -- (\xat-1.15, -1.76);
+\draw[arr] (\xat+1.15, -1.76) -- (\xout-1.3, -1.76);
+
+\node[hdr] at (\xin, 0.95) {$X$};
+\node[hdr] at (\xout, 0.95) {$\mathrm{Attention}(X)$};
+
+% ---------- row B : the same words, two of them swapped ----------
+\foreach \w/\i/\sty in {The/0/tok, mouse/1/mousebox, chased/2/tok, the/3/tok, cat/4/catbox} {
+    \node[\sty] (b\i) at (\xin, \rowB-\i*\dy) {\w};
+}
+\foreach \n/\i in {1/0, 2/1, 3/2, 4/3, 5/4} {
+    \node[pos] at (\xin-1.55, \rowB-\i*\dy) {(\n)};
+}
+
+\node[attn] (attnB) at (\xat, \rowB-1.76) {Attention};
+
+\foreach \w/\i/\sty in {The/0/outbox, mouse/1/mouseout, chased/2/outbox, the/3/outbox, cat/4/catout} {
+    \node[\sty] (ob\i) at (\xout, \rowB-\i*\dy) {$y_{\text{\w}}$};
+}
+
+\draw[arr] (\xin+1.2, \rowB-1.76) -- (\xat-1.15, \rowB-1.76);
+\draw[arr] (\xat+1.15, \rowB-1.76) -- (\xout-1.3, \rowB-1.76);
+
+\node[hdr] at (\xin, \rowB+0.95) {$\Pi X$};
+\node[hdr] at (\xout, \rowB+0.95) {$\Pi\mathrm{Attention}(X)$};
+
+% ---------- the two permutations ----------
+\draw[-{Stealth[length=7pt]}, line width=1.4pt, color=c2]
+    (\xin-2.3, -0.2) -- node[left=3pt, font=\sffamily\small, text=c2] {$\Pi$} (\xin-2.3, \rowB+0.2);
+\draw[-{Stealth[length=7pt]}, line width=1.4pt, color=c2]
+    (\xout+2.4, -0.2) -- node[right=3pt, font=\sffamily\small, text=c2] {$\Pi$} (\xout+2.4, \rowB+0.2);
+
+\end{tikzpicture}
+\end{document}

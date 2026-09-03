@@ -85,7 +85,8 @@ c4**. Never swap these between figures.
 
 | name | shows |
 |------|-------|
-| `permutation_equivariance` | The same tokens shuffled producing the same attention output, proving positions must be injected. |
+| `two_lookups` | Three grids: the five word vectors (the two copies of *the* identical), the five position vectors (all different), and their sum, in which those two rows differ. Shows that position enters as a second lookup indexed by slot rather than by token, and that adding it is what separates repeated words. |
+| `permutation_equivariance` | Two rows: the sentence, and the same sentence with *cat* and *mouse* swapped, each through the same attention block. Positions **(1)** to **(5)** are fixed in both, only the words move. The outputs hold the same five vectors with two rows traded, and the $\Pi$ entering on the left leaves on the right. Drawn: this is $\mathrm{Attention}(\Pi X) = \Pi\,\mathrm{Attention}(X)$. |
 | `sinusoidal_encoding` | The sinusoid bands across dimension and position, and how a dot product between two encodings falls off with distance. |
 | `rope_rotation` | Rotary positions as a rotation of the query and key in 2-D planes, and why only relative offsets survive. |
 

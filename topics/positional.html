@@ -94,8 +94,8 @@
           </p>
 
           <p class="mt-4">
-            This is not a flaw we have to go hunting for, because our own
-            numbers have been quietly breaking it for several sections. Back in
+            If we pay attention to the numbers we have been showing, they have
+            been quietly breaking it for several sections. Back in
             <a
               href="self_attention.html"
               class="text-c2 hover:text-c3 transition-colors"
@@ -103,51 +103,327 @@
             >
             we said that <em>the</em> is fetched twice from the embedding table
             and that both copies come back identical. If that is true, then both
-            occurrences hand over the very same key, and word
-            <strong>(3)</strong>'s query has no choice but to score them
-            equally. Yet every figure since
+            occurrences hand over the very same key, and the query belonging to
+            word <strong>(3)</strong> <em>chased</em> has no choice but to score
+            them equally. Yet every figure since
             <a
               href="scaled_dot_product.html"
               class="text-c2 hover:text-c3 transition-colors"
               >section 05</a
             >
             gives the first <em>the</em> a weight of 0.04 and the second one
-            0.06.
-            <span class="hl-c2"
-              >Both of those things cannot be true at the same time</span
-            >.
+            0.06. Both of those things cannot be true at the same time.
           </p>
 
           <p class="mt-4">
-            The general statement is easier to write down than to argue about.
-            Let $\Pi$ be a permutation matrix, so that $\Pi X$ is our
-            sentence with its rows shuffled. Because the projections are
-            row-wise, shuffling the input shuffles $Q$, $K$, and $V$ in exactly
-            the same way, giving $Q' = \Pi Q$, $K' = \Pi K$, and
-            $V' = \Pi V$. The softmax then runs along each row on its own, and
-            $\Pi^{\top}$ only reorders the entries within a row, so it passes
-            straight through and meets its own $\Pi$ on the other side:
+            Let's visualise this more formally. Let $\Pi$ be a permutation
+            matrix, so that $\Pi X$ is our sentence with its rows shuffled.
+            Because the projections are row-wise, shuffling the input shuffles
+            all three of them in exactly the same way:
+          </p>
+
+          <div class="my-4 py-2 text-center">
+            $$Q' = (\Pi X)W_Q = \Pi Q, \qquad K' = \Pi K, \qquad V' = \Pi V$$
+          </div>
+
+          <p class="mt-4">
+            The scores follow from those three. Transposing the second factor
+            sends its permutation to the other side, so the score matrix comes
+            out with a $\Pi$ on the left and a $\Pi^{\top}$ on the right:
+          </p>
+
+          <div class="my-4 py-2 text-center">
+            $$Q'K'^{\top} = (\Pi Q)(\Pi K)^{\top} = \Pi\,QK^{\top}\,
+            \Pi^{\top}$$
+          </div>
+
+          <p class="mt-4">
+            Next, consider the softmax function, which operates independently
+            across each row. The $\Pi$ on the left permutes whole rows, and the
+            $\Pi^{\top}$ on the right permutes individual entries within those
+            rows. Because neither operation alters the actual set of values
+            contained within any given row, the softmax function commutes with
+            both permutations:
+          </p>
+
+          <div class="my-4 py-2 text-center">
+            $$\operatorname{softmax}\!\left(\frac{\Pi\,QK^{\top}\,
+            \Pi^{\top}}{\sqrt{d_k}}\right) =
+            \Pi\operatorname{softmax}\!\left(\frac{QK^{\top}}{\sqrt{d_k}}
+            \right)\Pi^{\top}$$
+          </div>
+
+          <p class="mt-4">
+            The final step involves blending the values. At this stage, the
+            transposed permutation matrix $\Pi^\top$ that has been carried
+            through the equation multiplies the permutation matrix $\Pi$
+            associated with the transformed values $V' = \Pi V$. Because
+            multiplying a permutation matrix by its transpose yields the
+            identity matrix $\Pi^\top \Pi = I$ these two terms mathematically
+            cancel one another:
+          </p>
+
+          <div class="my-4 py-2 text-center">
+            $$\Pi\operatorname{softmax}\!\left(\frac{QK^{\top}}
+            {\sqrt{d_k}}\right)\Pi^{\top}\,\Pi V =
+            \Pi\operatorname{softmax}\!\left(\frac{QK^{\top}}{\sqrt{d_k}}
+            \right)V$$
+          </div>
+
+          <p class="mt-4">
+            If we use $\operatorname{Attention}(X)$ to represent the entire
+            self-attention process applied to matrix $X$, we can summarise all
+            four steps in a single equation:
           </p>
 
           <div
             class="my-3 py-3 text-center rounded-lg border border-c3/40 bg-c3/5"
           >
-            $$\operatorname{softmax}\!\left(\frac{(\Pi Q)(\Pi K)^{\top}}
-            {\sqrt{d_k}}\right)(\Pi V) =
-            \Pi\operatorname{softmax}\!\left(\frac{QK^{\top}}{\sqrt{d_k}}\right)
-            \Pi^{\top}\Pi\,V =
-            \Pi\operatorname{softmax}\!\left(\frac{QK^{\top}}{\sqrt{d_k}}\right)V$$
+            $$\operatorname{Attention}(\Pi X) = \Pi\operatorname{Attention}(X)$$
           </div>
 
           <p class="mt-4">
-            since $\Pi^{\top}\Pi = I$. The output is the old output with its
-            rows moved, and nothing else, which is the property called
-            <strong>permutation equivariance</strong>. The one part of the model
-            that treats positions differently at all is the mask we added in the
-            last section, and it is a blunt instrument: it decides which cells a
-            row is allowed to read, and still never says <em>where</em> a
-            readable word is sitting.
+            This means that if we shuffle the input sentence, the final output
+            is simply the original output shuffled in the exact same way. This
+            property is called <b>permutation equivariance</b>. It highlights a
+            major problem in which the model does not inherently understand word
+            order. The only part of the architecture that treats positions
+            differently at all is the mask discussed in the previous section.
+            Yet, that mask controls which words the model is allowed to look at,
+            but it still fails to tell the model exactly <b>where</b> those
+            readable words are located in the sequence.
           </p>
+
+          <figure class="my-10 flex flex-col items-center">
+            <img
+              src="../figures/build/permutation_equivariance.svg"
+              alt="The sentence The cat chased the mouse and the same sentence with cat and mouse swapped, each running through the same attention block. The five positions are numbered one to five in both, and the two outputs hold the same five vectors with the rows for cat and mouse traded."
+              class="w-full max-w-3xl"
+            />
+            <figcaption class="mt-3 text-sm text-muted text-center max-w-2xl">
+              The positions <strong>(1)</strong> to <strong>(5)</strong> stay
+              exactly where they are, and only the words move between them. The
+              same five vectors come back on both sides, so the second sentence
+              is the first one with two rows traded and nothing else changed.
+              The $\Pi$ that went in on the left comes straight back out on the
+              right.
+            </figcaption>
+          </figure>
+        </section>
+
+        <section>
+          <h2 class="text-2xl font-semibold text-ink dark:text-white mb-4">
+            Where order has to come from
+          </h2>
+          <p>
+            Nothing is wrong with the mechanism itself. Attention does exactly
+            what we built it to do, comparing every row of $X$ against every
+            other one and blending the values accordingly. The trouble is what
+            $X$ contains. Row $i$ holds the embedding of the word sitting at
+            position $i$ and nothing else, so two copies of the same word
+            produce two identical rows, and no amount of arithmetic downstream
+            can tell them apart. The solution to this cannot live inside the dot
+            product or the softmax either, because both of them only ever see
+            the rows they are handed. If two rows go in identical, they come out
+            identical.
+            <span class="hl-c2"
+              >The information has to arrive with the input, which means the
+              vectors themselves must already differ depending on where they
+              sit</span
+            >.
+          </p>
+
+          <p class="mt-4">
+            The most direct way to arrange that is to write the position into
+            the vector. Give every embedding one extra coordinate and store the
+            index in it, so the word at position <strong>(1)</strong> carries a
+            1, the word at position <strong>(2)</strong> carries a 2, and our
+            two copies of <em>the</em> at <strong>(1)</strong> and
+            <strong>(4)</strong> finally differ by 3. It costs a single
+            dimension, it needs no training, and it makes every row in the
+            sentence unique, which is precisely what we just said we needed.
+          </p>
+
+          <p class="mt-4">
+            This idea doesn't work at scale. Back in
+            <a
+              href="softmax_weights.html"
+              class="text-c2 hover:text-c3 transition-colors"
+              >section 04</a
+            >
+            we worked out that a score is a sum of $d_k$ products with a spread
+            of about $\sqrt{d_k}$, so a 64-dimensional model produces content
+            scores somewhere around $\pm 8$. However, our added position
+            coordinate does not follow this strict budget. A word at position
+            500 introduces a massive term of order 500 into the dot product,
+            which overwhelms the other 64 dimensions. While the softmax function
+            relies exclusively on relative gaps rather than absolute values,
+            this positional addition is not uniform. Because it increases
+            linearly with the key's position, the softmax weights collapse
+            toward whichever end of the sentence has the highest numbers, thus
+            ignoring what the words themselves actually mean.
+          </p>
+
+          <p class="mt-4">
+            The obvious repair is to keep the coordinate and shrink it. Divide
+            the index by the length of the sentence so that it always lands
+            between 0 and 1, and the problem of scale disappears. But don't get
+            too excited yet! Something else will also break this logic. In our
+            five-word sentence, the third word sits at 0.6, but in a
+            hundred-word paragraph, the third word sits at 0.03. The exact same
+            absolute position results in a completely different number depending
+            on how long the sentence is. The <b>step size</b> between words
+            changes too, dropping from 0.2 in the short sentence to just 0.01 in
+            the long one. A rule as ordinary as
+            <em>look at the previous word</em> has no fixed numerical form for
+            the model to learn, because that form changes with every sentence it
+            is shown.
+          </p>
+
+          <p class="mt-4">
+            Every scheme we have tried, and their respective problems:
+          </p>
+          <ul class="mt-3 ml-6 space-y-4 list-disc text-[18px]">
+            <li>
+              <b>Store the raw index.</b> One extra coordinate holding 1, 2, 3,
+              and so on down the sentence.
+              <ul class="mt-2 ml-6 list-[circle] text-[17px]">
+                <li>
+                  <u>Problem</u>: it obeys no budget. At position 500 it
+                  contributes a term of order 500 against content scores of $\pm
+                  8$, so the weights rank by position and stop reading the
+                  words.
+                </li>
+              </ul>
+            </li>
+            <li>
+              <b>Normalise the index.</b> Divide by the length of the sentence
+              so the coordinate always lands between 0 and 1.
+              <ul class="mt-2 ml-6 list-[circle] text-[17px]">
+                <li>
+                  <u>Problem</u>: the same position, and the same step between
+                  words, is a different number in every sentence, so no fixed
+                  rule about distance is ever learnable.
+                </li>
+              </ul>
+            </li>
+            <li>
+              <b>Multiply instead of add.</b> Scaling the embedding by the
+              position.
+              <ul class="mt-2 ml-6 list-[circle] text-[17px]">
+                <li>
+                  <u>Problem</u>: it changes the length of the word's vector, so
+                  <em>mouse</em> at position 50 is fifty times louder than
+                  <em>mouse</em> at position 1. The score then measures volume
+                  rather than meaning.
+                </li>
+              </ul>
+            </li>
+            <li>
+              <b>One-hot the position.</b> Appending an indicator of length $n$.
+              <ul class="mt-2 ml-6 list-[circle] text-[17px]">
+                <li>
+                  <u>Problem</u>: it makes every position distinct and does
+                  nothing else. Two neighbouring positions sit exactly as far
+                  apart as two distant ones, the width of the model now depends
+                  on the length of the sentence, and a position past $n$ has no
+                  column at all.
+                </li>
+              </ul>
+            </li>
+          </ul>
+        </section>
+
+        <section>
+          <h2 class="text-2xl font-semibold text-ink dark:text-white mb-4">
+            One vector per position
+          </h2>
+          <p>
+            An idea: stop trying to describe a position with a number.
+            <b>Every position</b> gets a vector of its own, $d_{\text{model}}$
+            numbers wide, exactly as wide as the embedding it is going to join,
+            and we add the two together. Word <strong>(3)</strong>
+            <em>chased</em> now arrives as its own embedding plus the vector
+            belonging to position 3, and our two copies of <em>the</em> word
+            finally differ, because the vector for position
+            <strong>(1)</strong> is not the vector for position
+            <strong>(4)</strong>.
+          </p>
+          <p class="mt-4">
+            A vector buys what a single coordinate could not. Spread across
+            $d_{\text{model}}$ numbers, a position becomes a pattern rather than
+            a magnitude, so two positions are free to agree in some coordinates
+            and differ in others. And the notion of distance starts to get more
+            meaning, nothing forces the pattern to grow as we move along the
+            sentence. It can stay small enough to colour a score rather than
+            decide it.
+          </p>
+          <p class="mt-4">
+            That leaves the question of what those vectors hold, and the
+            simplest answer is "let it fly!". Alright, that wasn't clear. We
+            should build a table with one row per position, of shape
+            $n_{\text{max}} \times d_{\text{model}}$, fill it with random
+            numbers and let training sort it out, exactly as we did for the
+            words themselves in
+            <a
+              href="self_attention.html"
+              class="text-c2 hover:text-c3 transition-colors"
+              >section 06</a
+            >. Building $X$ becomes <b>two lookups</b> instead of one: each word
+            fetches its row from the embedding table, each slot fetches its row
+            from the position table, and the two are added.
+          </p>
+
+          <figure class="my-10 flex flex-col items-center">
+            <img
+              src="../figures/build/two_lookups.svg"
+              alt="Three grids side by side. The first holds one row per word of the sentence, and the rows for the two occurrences of the are identical. The second holds one row per position, all five different. The third is their sum, in which the two rows for the are no longer identical."
+              class="w-full max-w-3xl"
+            />
+            <figcaption class="mt-3 text-sm text-muted text-center max-w-2xl">
+              Two tables, having two different functions: one by
+              <em>which word this is</em>, the other by
+              <em>which slot it sits in</em>. Our two copies of <em>the</em>
+              fetch the same row on the left and different rows in the middle,
+              so what they hand to attention is no longer the same vector. The
+              0.04 and the 0.06 we could not account for at the start of this
+              section have just become possible.
+            </figcaption>
+          </figure>
+          <p class="mt-4">
+            This setup actually works great, and plenty of big models use
+            exactly this trick. The catch is that we are completely locked into
+            the table's size. We have to pick the maximum length,
+            $n_{\text{max}}$, before the training start, and the model won't
+            build a single row beyond that limit. So, a model built for 1024
+            words doesn't just do a bad job on word 1025 it simply crashes
+            because there is absolutely nothing there to look up. On top of
+            that, the rows at the very end barely get any practice since super
+            long sentences don't show up very often.
+            <span class="hl-c2"
+              >Since they are totally separate variables, the model has to
+              figure out that they are next-door neighbors completely from
+              scratch, learning that relationship one pair at a time</span
+            >.
+          </p>
+
+          <div
+            class="my-8 panel-c4 rounded-xl border-l-4 border-l-c2 px-7 py-6"
+          >
+            <p
+              class="text-xs uppercase tracking-[0.2em] text-c2 font-semibold mb-3"
+            >
+              Context length
+            </p>
+            <p class="text-ink dark:text-white text-lg leading-relaxed mb-3">
+              That $n_{\text{max}}$ variable is actually a number you've
+              probably seen a ton of times if you follow AI news. When you hear
+              that a model has a "context window" of 1,024 tokens, or 8,192, or
+              a million, that is exactly what $n_{\text{max}}$ is. It's the hard
+              limit on the longest sequence the model can actually read at one
+              time!
+            </p>
+          </div>
         </section>
       </div>
 
