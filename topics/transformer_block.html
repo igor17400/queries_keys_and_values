@@ -68,28 +68,182 @@
           The Transformer Block
         </h1>
         <p class="text-lg text-muted leading-relaxed">
-          The residual stream, layer normalisation, and the feed-forward layer that surrounds attention.
+          Transformers The Rich and the Famous
         </p>
       </header>
 
       <div
         class="space-y-12 text-gray-700 dark:text-gray-300 leading-relaxed text-[18px]"
       >
-        <!-- TODO: prose not written yet. The figures below are placed in the
-             reading order planned for the section, so they can be looked at
-             before the paragraphs around them exist. See figures/FIGURE_PLAN.md
-             section 10 for the brief each one was drawn from. -->
         <section>
-          <p class="text-muted italic">
-            Figures only. The prose is not written yet.
+          <p>
+            Let's recap the overall idea of what we are trying to achieve. We
+            want every word in a sentence to end up with a vector that carries
+            what the rest of the sentence contributes to it, and we want the
+            model to decide on its own which other words matter. That part is
+            now built. The sentence arrives as $X$ with its positions already in
+            it, each head turns it into $Q$, $K$ and $V$, the mask settles which
+            positions a query is allowed to read, and $W_O$ folds the heads back
+            into one vector per word, at the width the word arrived at. The word
+            <em>chased</em> leaves holding 0.60 of <em>mouse</em>, 0.18 of
+            <em>cat</em>, and a small amount of each remaining word.
           </p>
 
-          <!-- Subsection 1: attention moves, it does not compute -->
+          <p class="mt-4">
+            <a
+              href="masking.html"
+              class="text-c2 hover:text-c3 transition-colors"
+              >Section 08</a
+            >
+            set the model a task: read <em>The cat chased the</em> and give the
+            word that follows. Answering <em>mouse</em> means using two facts
+            that now sit in the same vector, that the subject is a cat and that
+            the verb is <em>chased</em>. Attention put both of them there by
+            averaging. Averaging is not the same as deriving a third fact from
+            the two, and no part of the model does that yet.
+            <span class="hl-c2"
+              >Gathering information and computing something with it are two
+              different operations, and the model so far performs only the
+              first</span
+            >.
+          </p>
+
+          <p class="mt-4">
+            This section builds what is missing. First a small network that
+            computes with each word's vector, then the wiring that lets many of
+            these blocks be stacked without the signal degrading. By the end the
+            model is complete, from a token going in to a distribution over the
+            next word coming out.
+          </p>
+        </section>
+
+        <!-- Subsection 1: why another round will not help -->
+        <section>
+          <h2 class="text-2xl font-semibold text-ink dark:text-white mb-4">
+            Two rounds collapse into one
+          </h2>
+          <p>
+            Let's begin by considering what happens if we run the attention
+            mechanism a second time. A single round of attention outputs the
+            exact same shape it receives, which is one vector per word with a
+            width of $d_{\text{model}}$. Because of this, its output can be
+            plugged right back in as a new sequence matrix $X$ to repeat the
+            cycle. The logic here is that giving the model another pass might
+            allow it to pull together deeper patterns and capture a richer
+            contextual understanding.
+          </p>
+
+          <p class="mt-4">
+            To keep it more readable we will follow a single head, since nothing
+            in the argument changes when there are $h$ of them.
+          </p>
+
+          <p class="mt-4">
+            Recall what
+            <a
+              href="scaled_dot_product.html"
+              class="text-c2 hover:text-c3 transition-colors"
+              >section 05</a
+            >
+            left us with:
+          </p>
+          <div
+            class="my-3 py-3 text-center rounded-lg border border-c3/40 bg-c3/5"
+          >
+            $$\operatorname{Attention}(Q, K, V) =
+            \operatorname{softmax}\!\left(\frac{QK^{\top}}{\sqrt{d_k}}\right)V$$
+          </div>
+          <p class="mt-4">
+            Two of those pieces can be written more compactly. The softmax
+            factor is the $n \times n$ table of weights, so let us call it $A$:
+          </p>
+          <div
+            class="my-3 py-3 text-center rounded-lg border border-c3/40 bg-c3/5"
+          >
+            $$A = \operatorname{softmax}\!\left(\frac{QK^{\top}}{\sqrt{d_k}}
+            \right)$$
+          </div>
+          <p class="mt-4">
+            And
+            <a
+              href="self_attention.html"
+              class="text-c2 hover:text-c3 transition-colors"
+              >section 06</a
+            >
+            told us where $V$ comes from: $V = XW_V$, the sentence with a
+            projection applied to it. Substituting both into the formula above,
+            one round of attention is:
+          </p>
+          <div
+            class="my-3 py-3 text-center rounded-lg border border-c3/40 bg-c3/5"
+          >
+            $$\operatorname{Attention}(X) = A\,V = A\,X\,W_V$$
+          </div>
+          <p class="mt-4">
+            Where $A$ mixes the rows of $X$ together, and $W_V$ reshapes each
+            row on its own.
+          </p>
+
+          <p class="mt-4">
+            Now feed that output into a <b>second round</b>. It has the same
+            three factors: its own table of weights $A_2$, whatever it was
+            handed, and its own projection $W_V^{(2)}$. Freeze the weights for a
+            moment, so that $A_1$ and $A_2$ are fixed grids of numbers, and two
+            rounds written one after the other give:
+          </p>
+          <div
+            class="my-3 py-3 text-center rounded-lg border border-c3/40 bg-c3/5"
+          >
+            $$A_2\!\left(A_1 X W_V^{(1)}\right) \, W_V^{(2)} = (A_2 A_1)\, X
+            \,(W_V^{(1)} W_V^{(2)})$$
+          </div>
+          <p class="mt-4">
+            Look at what the right-hand side says. $A_2 A_1$ is a single $n
+            \times n$ table, and $W_V^{(1)} W_V^{(2)}$ is a single projection,
+            so the whole thing has exactly the form we started with, $A X W_V$.
+            <span class="hl-c3"
+              >Two rounds of attention have the shape of one round</span
+            >, and we paid for the second one to get a differently weighted
+            average of the same five vectors.
+          </p>
+
+          <p class="mt-4">
+            We froze the weights to get that result, and in a real stack they
+            are not frozen. $A_2$ is computed from whatever the first round
+            produced, so the second round's weights do depend on the first
+            round's output, and running attention twice is not the same as
+            running it once. But that dependence sits in $A$, in the proportions
+            of the blend. It never sits in the vectors being blended. Every
+            value travels from one end of the mechanism to the other without
+            passing through a nonlinear function.
+            <b
+              >The softmax decides how much of each word to take, never what any
+              word is</b
+            >.
+          </p>
+
+          <p class="mt-4">
+            The limit can be stated geometrically. Every row of $A$ is positive
+            and sums to one, which is exactly what we demanded of it back in
+            <a
+              href="softmax_weights.html"
+              class="text-c2 hover:text-c3 transition-colors"
+              >section 04</a
+            >, so the answer a head returns is an average of the value vectors
+            in which no weight is ever negative.
+            <span class="hl-c2"
+              >A head can move a word anywhere inside the region its value
+              vectors span, and nowhere else</span
+            >. The left panel below draws that region for our sentence, with
+            <em>chased</em>'s answer sitting inside it. The right panel is where
+            we need to get to.
+          </p>
+
           <figure class="my-10 flex flex-col items-center">
             <img
               src="../figures/build/blend_stays_inside.svg"
               alt="Left: the five value vectors of the sentence drawn as points in the plane with their convex hull shaded, and the answer that chased came away with sitting inside that hull, nearest the value of mouse. Right: the same hull with the answer moved outside it by the feed-forward network."
-              class="w-full max-w-2xl"
+              class="w-full max-w-3xl"
             />
             <figcaption class="mt-3 text-sm text-muted text-center max-w-xl">
               A softmax row is positive and sums to one, so one head's answer is
@@ -98,13 +252,52 @@
               somewhere new.
             </figcaption>
           </figure>
+        </section>
 
-          <!-- Subsection 2: a small network at every position -->
+        <!-- Subsection 2: a small network at every position -->
+        <section>
+          <h2 class="text-2xl font-semibold text-ink dark:text-white mb-4">
+            Give every word its own network
+          </h2>
+          <p>
+            Let's move on to the next step. The attention mechanism has already
+            enriched each word's vector with relevant contextual information
+            from the surrounding sequence. Consequently, the next objective is
+            to perform a computation strictly on this updated vector, rather
+            than averaging it with its neighbors again. Attention has already
+            done all the necessary sideways looking, and it is the only part of
+            the model that ever needs to. This means whatever mechanism we add
+            next should strictly read one word's vector at a time and nothing
+            else.
+          </p>
+
+          <p class="mt-4">
+            That step is two matrix multiplications with a function applied in
+            between:
+          </p>
+          <div
+            class="my-3 py-3 text-center rounded-lg border border-c3/40 bg-c3/5"
+          >
+            $$\operatorname{FFN}(x) = \phi(xW_1 + b_1)W_2 + b_2$$
+          </div>
+          <p class="mt-4">
+            Here $x$ is one word's vector, $W_1$ is $d_{\text{model}} \times
+            d_{\text{ff}}$ and $W_2$ is $d_{\text{ff}} \times d_{\text{model}}$,
+            so the vector widens to $d_{\text{ff}}$ and comes back to the width
+            it arrived at. The usual choice is $d_{\text{ff}} =
+            4\,d_{\text{model}}$, which is 36 for our nine-wide example. The
+            function $\phi$ is applied to each number on its own. The figure
+            below puts this next to attention. On the left every row is joined
+            to every other row. On the right each row runs through the same
+            $W_1$ and $W_2$ on its own, and
+            <span class="hl-c3">no line crosses between rows</span>.
+          </p>
+
           <figure class="my-10 flex flex-col items-center">
             <img
               src="../figures/build/mix_then_think.svg"
               alt="Two panels over the same five word rows. On the left, attention, where every row is joined to every other row by an arrow. On the right, the feed-forward network, where each row passes through its own copy of the same two-layer network and no arrow crosses between rows."
-              class="w-full max-w-2xl"
+              class="w-full max-w-3xl"
             />
             <figcaption class="mt-3 text-sm text-muted text-center max-w-xl">
               The two sublayers have exactly complementary jobs. Attention is
@@ -113,6 +306,21 @@
               one of each.
             </figcaption>
           </figure>
+
+          <p class="mt-4">
+            The most common choice for $\phi$ is the ReLU function, which simply
+            replaces any negative number with a zero and leaves positive numbers
+            unchanged. Each column in the $W_1$ matrix compresses the word's
+            vector into a single number. Because ReLU only keeps positive
+            numbers, a column will output zero unless it detects a very specific
+            combination of features, like a vector containing both a "cat" and a
+            "chase" concept at the same time. Afterward, the $W_2$ matrix takes
+            the results of those successful detections and writes them back into
+            the word's vector. Expanding the vector's width to $d_{\text{ff}}$
+            gives the model enough room to run thousands of these specific tests
+            at once, and shrinking it back down to $d_{\text{model}}$ packages
+            those conclusions so the rest of the architecture can read them.
+          </p>
 
           <!-- Subsection 3: adding instead of replacing -->
           <figure class="my-10 flex flex-col items-center">

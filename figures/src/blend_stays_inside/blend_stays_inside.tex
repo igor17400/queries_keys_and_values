@@ -34,9 +34,27 @@
 % points, i.e. what other weight rows would reach. All lie at least 0.25 from
 % the boundary and 0.6 from the answer point, and clear of the labels.
 %
-% Vertical plan (panel local): title 5.6, scope note 5.2, hull top 4.3,
-% hull bottom 0.5, axis gnomon corner (-1.0, -0.75), axis caption under the
-% corner at (-1.0, -1.00) so it names the plane, not the horizontal arm only.
+% ---------------------------------------------------------------- legibility
+% The figure is shown at 672 px (max-w-2xl), so what a reader can read is
+% (font size in pt) x 672 / (page width in pt). The drawing is therefore
+% deliberately SMALL relative to the type:
+%
+%   x = y = 0.82 cm per data unit   -> the pentagon is 3.9 cm across
+%   page width ~ 470 pt             -> 1.43 px per pt at 672 px
+%   10 pt point labels  -> 14.3 px      12 pt titles -> 17.2 px
+%    9 pt annotations   -> 12.9 px      nothing below 9 pt anywhere
+%
+% Width paid for by: (i) panel (b) carries only the v_i tags, since its
+% points sit at the same places as (a)'s and its subject is the arrow;
+% (ii) the inter-panel gap is 0.8 data units; (iii) the axis gnomon is
+% short and its caption tucks under the corner.
+%
+% Vertical plan (panel local, data units):
+%   6.55 title      5.95 scope note (panel a only)      4.50 v2 label foot
+%   4.30 hull top   0.50 hull bottom   0.28 v4 label head
+%  -0.90 gnomon corner    -1.15 axis caption head   -1.65 panel foot
+% Horizontal plan (panel local): -1.45 step marker, -1.41 leftmost label edge,
+%   8.63 rightmost label edge (a) / 7.16 rightmost mark (b, the moved point).
 % Panel (b) is panel (a) shifted by dx = 10.4, with the answer point moved
 % along the FFN arrow to (7.0, 1.4), which leaves the hull through the
 % v3--v4 edge at x = 4.91.
@@ -50,28 +68,30 @@
 
 \begin{document}
 \begin{tikzpicture}[
+    x=0.82cm, y=0.82cm,
     every node/.style={font=\sffamily},
-    hullshape/.style={fill=c4, draw=c1, draw opacity=0.45, line width=1pt,
+    hullshape/.style={fill=c4, draw=c1, draw opacity=0.45, line width=1.1pt,
                       line join=round},
     vdot/.style={circle, fill=c3, draw=c3!60!black, draw opacity=0.5,
-                 line width=0.4pt, inner sep=0pt, minimum size=5.2pt},
+                 line width=0.5pt, inner sep=0pt, minimum size=6pt},
     faint/.style={circle, fill=labelcolor, fill opacity=0.30, inner sep=0pt,
-                  minimum size=3pt},
-    ans/.style={circle, fill=c2, draw=white, line width=0.9pt, inner sep=0pt,
-                minimum size=7.5pt},
-    vlab/.style={font=\sffamily\scriptsize, text=c1, align=center,
-                 inner sep=1.5pt, line width=0pt},
-    ax/.style={-{Stealth[length=4.5pt]}, line width=0.7pt, axiscolor,
+                  minimum size=3.4pt},
+    ans/.style={circle, fill=c2, draw=white, line width=1pt, inner sep=0pt,
+                minimum size=9pt},
+    vlab/.style={font=\sffamily\normalsize, text=c1, align=center,
+                 inner sep=2pt, line width=0pt},
+    ax/.style={-{Stealth[length=5pt]}, line width=0.8pt, axiscolor,
                opacity=0.55},
-    axlab/.style={font=\sffamily\scriptsize, text=labelcolor, anchor=west},
-    title/.style={font=\sffamily\small\bfseries, text=axiscolor, anchor=west},
-    step/.style={font=\sffamily\small\bfseries, text=c2, anchor=west},
-    note/.style={font=\sffamily\scriptsize, text=labelcolor, anchor=west},
-    ffn/.style={-{Stealth[length=7pt]}, line width=1.5pt, c2},
+    axlab/.style={font=\sffamily\small, text=labelcolor, anchor=west},
+    title/.style={font=\sffamily\large\bfseries, text=axiscolor, anchor=west},
+    step/.style={font=\sffamily\large\bfseries, text=c2, anchor=west},
+    note/.style={font=\sffamily\small, text=labelcolor, anchor=west},
+    ffn/.style={-{Stealth[length=8pt]}, line width=1.8pt, c2},
 ]
 
 % ---------------------------------------------------------------- one panel
-% drawn twice, identically, so the moved point is the only difference
+% drawn twice, identically: hull, scatter and the five points come from a
+% single foreach, so the moved answer point is the only geometric difference
 \foreach \s in {0, \dx} {
   \begin{scope}[shift={(\s,0)}]
     \fill[hullshape] \hull;
@@ -86,48 +106,56 @@
     \node[vdot] at (4.5,0.5) {};
     \node[vdot] at (1.3,0.7) {};
 
-    \node[vlab, anchor=east]       at (0.50,3.34) {$v_1$ (1) The\\[-1pt]
-                                     \textcolor{c2}{0.04}};
-    \node[vlab, anchor=south]      at (2.90,4.46) {$v_2$ (2) cat\\[-1pt]
-                                     \textcolor{c2}{0.18}};
-    \node[vlab, anchor=west]       at (5.60,2.90) {$v_3$ (3) chased\\[-1pt]
-                                     \textcolor{c2}{0.12}};
-    \node[vlab, anchor=north]      at (4.62,0.30) {$v_4$ (4) the\\[-1pt]
-                                     \textcolor{c2}{0.06}};
-    \node[vlab, anchor=east]       at (1.12,0.72) {$v_5$ (5) mouse\\[-1pt]
-                                     \textcolor{c2}{0.60}};
-
     % the slice, named
-    \draw[ax] (-1.0,-0.75) -- (0.05,-0.75);
-    \draw[ax] (-1.0,-0.75) -- (-1.0,0.30);
-    \node[axlab, anchor=north west] at (-1.05,-0.98)
+    \draw[ax] (-1.0,-0.90) -- (0.05,-0.90);
+    \draw[ax] (-1.0,-0.90) -- (-1.0,0.15);
+    \node[axlab, anchor=north west] at (-1.10,-1.12)
         {two of the $d_v$ value dimensions};
   \end{scope}
 }
 
 % ---------------------------------------------------------------- panel (a)
-\node[step]  at (-1.75, 5.60) {(a)};
-\node[title] at (-1.20, 5.60) {the blend, inside the hull};
-\node[note]  at (-1.75, 5.10) {one head, before $W_O$};
+\node[step]  at (-1.45, 6.55) {(a)};
+\node[title] at (-0.86, 6.55) {the blend, inside the hull};
+\node[note]  at (-1.45, 5.95) {one head, before $W_O$};
+
+% the five value rows, named and weighted: stated once, here
+\node[vlab, anchor=east]  at (0.45,3.30) {$v_1$ (1) The\\[-1pt]
+                                          \textcolor{c2}{0.04}};
+\node[vlab, anchor=south] at (2.90,4.50) {$v_2$ (2) cat\\[-1pt]
+                                          \textcolor{c2}{0.18}};
+\node[vlab, anchor=west]  at (5.65,2.90) {$v_3$ (3) chased\\[-1pt]
+                                          \textcolor{c2}{0.12}};
+\node[vlab, anchor=north] at (4.55,0.28) {$v_4$ (4) the\\[-1pt]
+                                          \textcolor{c2}{0.06}};
+\node[vlab, anchor=east]  at (1.05,0.70) {$v_5$ (5) mouse\\[-1pt]
+                                          \textcolor{c2}{0.60}};
 
 \node[ans] at (2.248,1.704) {};
-\node[font=\sffamily\scriptsize, text=c2, anchor=north west, align=left,
-      inner sep=3pt]
-    at (2.42,1.72) {$\sum_j w_j v_j$\\[1pt]
+\node[font=\sffamily\normalsize, text=c2, anchor=south, align=center,
+      inner sep=2.5pt, fill=c4, fill opacity=0.92, text opacity=1]
+    at (2.95,1.86) {$\sum_j w_j v_j$\\[1pt]
                     \textcolor{labelcolor}{row (3) chased}};
 
 % ---------------------------------------------------------------- panel (b)
-\node[step]  at ({\dx-1.75}, 5.60) {(b)};
-\node[title] at ({\dx-1.20}, 5.60) {the same blend, moved out};
+\node[step]  at ({\dx-1.45}, 6.55) {(b)};
+\node[title] at ({\dx-0.86}, 6.55) {the same blend, moved out};
 
 \begin{scope}[shift={(\dx,0)}]
-    \node[circle, draw=c2, draw opacity=0.80, dash pattern=on 2.6pt off 2.2pt,
-          line width=1.1pt, inner sep=0pt, minimum size=8.5pt]
+    % same points, same places, so the tags alone identify them
+    \node[vlab, anchor=east]  at (0.45,3.30) {$v_1$};
+    \node[vlab, anchor=south] at (2.90,4.48) {$v_2$};
+    \node[vlab, anchor=west]  at (5.65,2.90) {$v_3$};
+    \node[vlab, anchor=north] at (4.50,0.28) {$v_4$};
+    \node[vlab, anchor=east]  at (1.05,0.70) {$v_5$};
+
+    \node[circle, draw=c2, draw opacity=0.80, dash pattern=on 2.8pt off 2.4pt,
+          line width=1.2pt, inner sep=0pt, minimum size=11pt]
           at (2.248,1.704) {};
-    % 3. FFN named on its own path, at the midpoint, not floating above it
-    \draw[ffn] (2.52,1.69) -- (6.78,1.42)
-        node[midway, above=2.5pt, font=\sffamily\small\bfseries, text=c2,
-             inner sep=1pt] {$\mathrm{FFN}$};
+    % FFN named on its own path, clear of the hull it is leaving
+    \draw[ffn] (2.62,1.69) -- (6.78,1.42);
+    \node[font=\sffamily\large\bfseries, text=c2, anchor=south, inner sep=2pt]
+          at (5.95,1.60) {$\mathrm{FFN}$};
     \node[ans] at (7.0,1.4) {};
 \end{scope}
 
