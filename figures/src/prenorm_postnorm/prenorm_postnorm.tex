@@ -111,7 +111,7 @@
 }
 \newcommand{\rowbody}{%
   \draw[stream, -{Stealth[length=8pt]}] (-1.25, 0) -- (20.90, 0);
-  \node[font=\sffamily\LARGE, text=c1, anchor=east] at (-1.40, 0) {$x$};
+  \node[font=\sffamily\LARGE, text=c1, anchor=east] at (-1.40, 0) {$\mathbf{x}$};
   \node[ann, anchor=north] at (0.10, -0.42) {$d_{\mathrm{model}} = 9$};
   \foreach \i/\T/\nm in {0/0/MultiHead, 1/3.00/FFN, 2/6.80/MultiHead,
                          3/9.80/FFN, 4/13.60/MultiHead, 5/16.60/FFN} {
@@ -144,7 +144,7 @@
       -- (-1.25, -1.05);
   \node[title] at (-1.70, 3.50)
       {\textbf{(a) post-norm}\quad
-       $x \leftarrow \mathrm{LN}\bigl(x + \mathrm{Sublayer}(x)\bigr)$};
+       $\mathbf{x} \leftarrow \mathrm{LN}\bigl(\mathbf{x} + \mathrm{Sublayer}(\mathbf{x})\bigr)$};
 \end{scope}
 
 % ================================================================
@@ -168,7 +168,7 @@
       -- (-1.25, -1.05);
   \node[title] at (-1.70, 3.50)
       {\textbf{(b) pre-norm}\quad
-       $x \leftarrow x + \mathrm{Sublayer}\bigl(\mathrm{LN}(x)\bigr)$};
+       $\mathbf{x} \leftarrow \mathbf{x} + \mathrm{Sublayer}\bigl(\mathrm{LN}(\mathbf{x})\bigr)$};
 \end{scope}
 
 % ================================================================
@@ -176,7 +176,7 @@
 % ================================================================
 \draw[stream] (2.70, -2.60) -- (3.40, -2.60);
 \addcirc{3.05}{-2.60}
-\node[key, anchor=west] at (3.55, -2.60) {$x + \mathrm{Sublayer}(x)$};
+\node[key, anchor=west] at (3.55, -2.60) {$\mathbf{x} + \mathrm{Sublayer}(\mathbf{x})$};
 \node[ln] at (8.20, -2.60) {$\mathrm{LN}$};
 \node[key, anchor=west] at (8.75, -2.60)
     {layer normalisation, rescales one word's vector};

@@ -88,9 +88,9 @@
 % ---------------------------------------------------------------- stream
 \draw[stream] (-0.85, 0) -- (17.85, 0);
 
-\node[sym] at (-0.35, 0.76) {$x$};
-\node[sym] at (8.60, 0.76) {$z$};
-\node[sym] at (17.30, 0.76) {$y$};
+\node[sym] at (-0.35, 0.76) {$\mathbf{x}$};
+\node[sym] at (8.60, 0.76) {$\mathbf{z}$};
+\node[sym] at (17.30, 0.76) {$\mathbf{y}$};
 \foreach \x in {-0.35, 4.05, 8.60, 12.60, 17.30} {
     \node[shp] at (\x, -0.62) {$5 \times 9$};
 }
@@ -157,7 +157,7 @@
 \node[eq] at (13.10, -1.58)
     {$y = z + \mathrm{FFN}\bigl(\mathrm{LN}_2(z)\bigr)$};
 \node[eq] at (13.10, -2.32)
-    {$\mathrm{FFN}(u) = \phi(u W_1 + b_1) W_2 + b_2$};
+    {$\mathrm{FFN}(\mathbf{u}) = \phi(\mathbf{u} W_1 + \mathbf{b}_1) W_2 + \mathbf{b}_2$};
 
 % ---------------------------------------------------------------- legend
 \draw[stream] (-0.85, -3.20) -- (0.25, -3.20);

@@ -280,10 +280,27 @@
             >
             we rejected the exact match because it gave us no slope, and a
             nearly one-hot softmax has the same problem in a somewhat milder
-            form. The derivative of a weight with respect to its own score is
-            $w(1 - w)$, which is largest around $w = 0.5$ and collapses as $w$
-            approaches 0 or 1. At 0.96 and 0.00 there is barely any gradient
-            left, so
+            form.
+          </p>
+          <figure class="my-10 flex flex-col items-center">
+            <img
+              src="../figures/build/gradient_vanishes.svg"
+              alt="The curve of w times one minus w over the range of weights from 0 to 1. It peaks at 0.25 when w is 0.5 and falls away to zero at both ends, with the point at w = 0.96 marked low on the right at 0.038."
+              class="w-full max-w-2xl"
+            />
+            <figcaption class="mt-3 text-sm text-muted text-center max-w-xl">
+              How much gradient a weight has left, plotted against the weight
+              itself. The middle of the range is where the model can still be
+              corrected, and both ends are flat.
+            </figcaption>
+          </figure>
+
+          <p class="mt-4">
+            The derivative of a weight with respect to its own score is $w(1 -
+            w)$, which is largest around $w = 0.5$ and collapses as $w$
+            approaches 0 or 1. As can be seen in the figure above, at $w = 0.5$
+            the curve sits at its peak of 0.25, while at 0.96 it has already
+            fallen to 0.038 and at 0.00 there is barely any gradient left, so
             <span class="hl-c2"
               >the model can barely learn that it attended to the wrong
               word</span
@@ -300,7 +317,8 @@
             <div class="px-6 pb-6 space-y-4 text-gray-700 dark:text-gray-300">
               <p>
                 It is the quotient rule applied to the softmax definition. Give
-                the denominator a name, $Z = \sum_j e^{s_j}$, so that the weight
+                the denominator a name, $Z = \sum_j e^{s_j}$, so that the
+                <b>weightweight</b>
                 is simply $w_i = e^{s_i} / Z$.
               </p>
               <p>
@@ -398,8 +416,11 @@
               <p>
                 That is exactly what saturation does. Every entry of $J$ is
                 built from products of weights, so a distribution like $(0.00,\,
-                0.03,\, 0.01,\, 0.00,\, 0.96)$ makes the whole table collapse:
-                the diagonal entries $w_i(1 - w_i)$ vanish because each $w_i$ is
+                0.03,\, 0.01,\, 0.00,\, 0.96)$ makes the whole table
+                <b>collapse</b>.
+              </p>
+              <p>
+                The diagonal entries $w_i(1 - w_i)$ vanish because each $w_i$ is
                 close to 0 or to 1, and the off-diagonal entries $-w_i w_j$
                 vanish because at least one of the two weights in every product
                 is tiny.
