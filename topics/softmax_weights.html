@@ -278,12 +278,12 @@
               class="text-c2 hover:text-c3 transition-colors"
               >section 02</a
             >
-            we rejected the
-            exact match because it gave us no slope, and a nearly one-hot
-            softmax has the same problem in a somewhat milder form. The
-            derivative of a weight with respect to its own score is $w(1 - w)$,
-            which is largest around $w = 0.5$ and collapses as $w$ approaches 0
-            or 1. At 0.96 and 0.00 there is barely any gradient left, so
+            we rejected the exact match because it gave us no slope, and a
+            nearly one-hot softmax has the same problem in a somewhat milder
+            form. The derivative of a weight with respect to its own score is
+            $w(1 - w)$, which is largest around $w = 0.5$ and collapses as $w$
+            approaches 0 or 1. At 0.96 and 0.00 there is barely any gradient
+            left, so
             <span class="hl-c2"
               >the model can barely learn that it attended to the wrong
               word</span
@@ -331,7 +331,8 @@
                 \frac{\left(\frac{\partial}{\partial s_i} e^{s_i}\right) Z -
                 e^{s_i} \frac{\partial Z}{\partial s_i}}{Z^{2}} = \frac{e^{s_i}
                 Z - e^{s_i} e^{s_i}}{Z^{2}} = \frac{e^{s_i}}{Z}\left(1 -
-                \frac{e^{s_i}}{Z}\right) = w_i\,(1 - w_i)$$
+                \frac{e^{s_i}}{Z}\right)$$ $$\frac{\partial w_i}{\partial s_i} =
+                w_i\,(1 - w_i)$$
               </div>
               <p>
                 The last step just recognises $e^{s_i} / Z$ as $w_i$, twice
@@ -486,9 +487,9 @@
             That leaves us somewhere much better. Sharpness no longer depends on
             how wide the model happens to be, so a 64-dimensional model and a
             512-dimensional one begin equally focused rather than one of them
-            starting out <strong>saturated</strong>. And if by any means the model does
-            want sharper attention, it can have it, by learning to produce
-            larger queries and keys.
+            starting out <strong>saturated</strong>. And if by any means the
+            model does want sharper attention, it can have it, by learning to
+            produce larger queries and keys.
           </p>
 
           <p class="mt-4">

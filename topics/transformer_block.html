@@ -322,18 +322,328 @@
             those conclusions so the rest of the architecture can read them.
           </p>
 
-          <!-- Subsection 3: adding instead of replacing -->
+          <p class="mt-4">
+            The block now has both operations. Attention moves information
+            between words, the feed-forward network computes with it, and a word
+            leaves at the width it arrived at, so the pair can be applied again
+            to its own output. Repeating it is what gives the model
+            <b>depth</b>, and it is also where the next problem appears. Each
+            sublayer replaces the vector it was handed, so after a dozen of them
+            nothing of the original word is left!
+          </p>
+        </section>
+
+        <!-- Subsection 3: adding instead of replacing -->
+        <section>
+          <h2 class="text-2xl font-semibold text-ink dark:text-white mb-4">
+            Adding blocks
+          </h2>
+          <p>
+            We now have both operations, so the natural move is to repeat them:
+            attention, then the feed-forward network, then attention again, and
+            so on for as many blocks as we can afford. However, stacking them
+            that way does have a cost. Each sublayer takes a vector and hands
+            back a different one, so what leaves a block is not what entered it.
+            One block is fine. A dozen in a row means
+            <span class="hl-c3"
+              >the word we started with has been overwritten a dozen times</span
+            >, and anything about it the model still needs has to be rebuilt at
+            every step. The fix is to <b>add</b> rather than <b>replace</b>. A
+            sublayer still reads the word's vector and still produces something
+            from it, but what it produces is added to the vector it was given
+            rather than taking its place:
+          </p>
+          <div
+            class="my-3 py-3 text-center rounded-lg border border-c3/40 bg-c3/5"
+          >
+            $$x \leftarrow x + \operatorname{Sublayer}(x)$$
+          </div>
+          <p class="mt-4">
+            where $\operatorname{Sublayer}$ stands for one of the two steps we
+            now have. Written at the level of the whole sentence, a block is
+            those two updates one after the other:
+          </p>
+          <div
+            class="my-3 py-3 text-center rounded-lg border border-c3/40 bg-c3/5"
+          >
+            $$Z = X + \operatorname{MultiHead}(X), \qquad Y = Z +
+            \operatorname{FFN}(Z)$$
+          </div>
+          <p class="mt-4">
+            $X$ is the sentence going in, $Z$ is what it becomes after
+            attention, and $Y$ is what leaves the block. All three are $n \times
+            d_{\text{model}}$, so both additions line up row by row. The two
+            steps read their input differently, and that difference is the one
+            from the figure above: $\operatorname{MultiHead}$ needs the whole of
+            $X$ to build any one of its rows, while $\operatorname{FFN}$ is
+            applied to each row on its own. This is called a
+            <strong>residual connection</strong>.
+          </p>
+
+          <p class="mt-4">
+            Now nothing is thrown away. The vector that arrived is still there
+            in the sum, and what the sublayer produced sits on top of it, so
+            each step contributes a correction rather than a replacement. A
+            sublayer with nothing useful to add can produce values near zero,
+            and the block passes the vector through unchanged, which means depth
+            can no longer destroy what earlier blocks built.
+          </p>
+
+          <p class="mt-4">
+            The figure below follows one word, row <strong>(3)</strong>
+            <em>chased</em>, through two blocks. Look at the line running from
+            $x$ to $y$: <span class="hl-c2">it is never interrupted</span>. Each
+            sublayer samples from it, does its work off to one side, and returns
+            through a $\oplus$, so nothing ever sits on the line itself. The
+            width specified along it stays $d_{\text{model}} = 9$ at every
+            point, before and after every addition. Read that line from left to
+            right and one word's vector is a running total meaning
+            <b>every block reads it, and every block adds to it</b>.
+          </p>
+
           <figure class="my-10 flex flex-col items-center">
             <img
               src="../figures/build/residual_stream.svg"
               alt="The vector of the word chased drawn as an unbroken line running through three blocks. Each sublayer branches off the line, does its work, and returns to be added back, so nothing ever sits on the line itself."
               class="w-full max-w-3xl"
             />
-            <figcaption class="mt-3 text-sm text-muted text-center max-w-xl">
-              Every sublayer hangs off the stream rather than sitting in it. It
-              reads a copy, and what it returns is added. The stream is a
-              running total that nothing overwrites, and the addition is what
-              forces every sublayer to give back the width it was given.
+            <figcaption class="mt-3 text-sm text-muted text-center max-w-3xl">
+              Notice how the sublayers sit off the main data stream instead of
+              blocking it. Each sublayer just graps a copy of the data, does its
+              own calculation, and adds the result back into the flow. This
+              makes the main stream a running total that never gets overwritten.
+              Because the output must be added directly to the original stream,
+              every sublayer is forced to return a vector of the exact same
+              width it was given.
+            </figcaption>
+          </figure>
+
+          <p class="mt-4">
+            Adding these blocks instead of replacing them creates another major
+            advantage that we only see during training. When the model makes a
+            mistake, the correction has to travel backward from the final loss
+            to every previous block in a process called <b>backpropagation</b>.
+            In a standard stack without residual connections, that correction
+            gets forced through every single sublayer and gets reshaped by each
+            one along the way. But because we use addition, the derivative of $x
+            + \operatorname{Sublayer}(x)$ with respect to $x$ becomes $I +
+            \partial \operatorname{Sublayer} / \partial x$. That $I$ is the
+            identity matrix, and it acts as an express lane that completely
+            bypasses the sublayer's internal math. Because of this clear path,
+            an important correction can safely travel all the way back to block
+            one, no matter what the sublayers in between are doing.
+          </p>
+
+          <p class="mt-4">
+            The figure below draws that backward journey twice, with every arrow
+            now pointing <b>left</b> because the correction travels from the
+            loss back towards block 1.
+          </p>
+
+          <ul class="mt-3 ml-6 space-y-3 list-disc text-[18px]">
+            <li>
+              <strong>(a)</strong> No residual connections. The stream runs
+              through each sublayer, so the correction has to pass through every
+              one of them on the way, arriving reshaped four times over.
+            </li>
+            <li>
+              <strong>(b)</strong> The additions are in place. At each $\oplus$
+              the correction <span class="hl-c2">forks in two</span>: one copy
+              carries on along the stream untouched, the other climbs into the
+              sublayer.
+            </li>
+          </ul>
+
+          <p class="mt-4">
+            That first copy is the $I$ in the derivative above, and it is what
+            reaches block 1 intact however small the sublayer's own contribution
+            has become.
+          </p>
+
+          <details class="my-6 panel-c4 rounded-xl">
+            <summary
+              class="px-6 py-4 cursor-pointer text-ink dark:text-white font-medium"
+            >
+              Aside: where the identity in the derivative comes from
+            </summary>
+            <div class="px-6 pb-6 space-y-4 text-gray-700 dark:text-gray-300">
+              <p>
+                Write one <b>sublayer</b> as a function $f$, so a residual step
+                is $y = x + f(x)$, with $x$ and $y$ both vectors of length
+                $d_{\text{model}}$.
+              </p>
+              <p>
+                Differentiating a vector by a vector gives a matrix, called the
+                <strong>Jacobian</strong>. Its entry $(i, j)$ answers one
+                question:
+                <em
+                  >how much does output $y_i$ move when input $x_j$ is
+                  nudged?</em
+                >
+              </p>
+              <p>
+                Write the residual step one component at a time. The $i$-th
+                number coming out is the $i$-th number going in, plus the $i$-th
+                number the sublayer produced:
+              </p>
+              <div class="my-4 py-2 text-center">
+                $$y_i = x_i + f_i(x_1, x_2, \ldots, x_d)$$
+              </div>
+              <p>
+                Notice the asymmetry in that line. The sublayer is written as
+                $f_i(x_1, x_2, \ldots, x_d)$ with all $d$ components of $x$ as
+                its arguments, because a sublayer may read the whole vector when
+                producing its $i$-th output. The $x_i$ beside it is a single
+                component, copied straight across. Differentiating with respect
+                to $x_j$ then yields:
+              </p>
+              <div class="my-4 py-2 text-center">
+                $$\frac{\partial y_i}{\partial x_j} = \frac{\partial \left( x_i
+                + f_i \right)}{\partial x_j} = \frac{\partial x_i}{\partial x_j}
+                + \frac{\partial f_i}{\partial x_j}$$
+              </div>
+              <p>
+                So where does the identity come from? From the $\frac{\partial
+                x_i}{\partial x_j}$, and the answer is that
+                <strong
+                  >there is no relation between $x_i$ and $x_j$ at all</strong
+                >. They are two separate components of the input vector, free to
+                be set independently of one another, so nudging $x_j$ does
+                nothing to $x_i$ unless they happen to be the same number:
+              </p>
+              <div class="my-4 py-2 text-center">
+                $$\frac{\partial x_i}{\partial x_j} = \begin{cases} 1 & i = j \\
+                0 & i \neq j \end{cases}$$
+              </div>
+              <p>
+                Let us do that with real indices. Take $d = 3$ and write out the
+                second output in full:
+              </p>
+              <div class="my-4 py-2 text-center">
+                $$y_2 = x_2 + f_2(x_1, x_2, x_3)$$
+              </div>
+              <p>
+                Differentiating it against two different inputs gives two
+                different answers. First against $x_1$:
+              </p>
+              <div class="my-4 py-2 text-center">
+                $$\frac{\partial y_2}{\partial x_1} = \frac{\partial
+                x_2}{\partial x_1} + \frac{\partial f_2}{\partial x_1} = 0 +
+                \frac{\partial f_2}{\partial x_1}$$
+              </div>
+              <p>
+                The first term is the derivative of $x_2$ with respect to $x_1$.
+                But $x_2$ is not a function of $x_1$, so its derivative is $0$.
+                Now against $x_2$ instead:
+              </p>
+              <div class="my-4 py-2 text-center">
+                $$\frac{\partial y_2}{\partial x_2} = \frac{\partial
+                x_2}{\partial x_2} + \frac{\partial f_2}{\partial x_2} = 1 +
+                \frac{\partial f_2}{\partial x_2}$$
+              </div>
+              <p>
+                This time the first term is the derivative of $x_2$ with respect
+                to itself, which is $1$. So the extra $1$ appears exactly when
+                the output index matches the input index, and nowhere else.
+                <span class="hl-c2"
+                  >Ones down the diagonal and zeros everywhere else is precisely
+                  the identity matrix</span
+                >.
+              </p>
+              <p>
+                That is the $\delta_{ij}$ we already met in
+                <a
+                  href="softmax_weights.html"
+                  class="text-c2 hover:text-c3 transition-colors"
+                  >section 04</a
+                >
+                (Jacobian aside), and collecting every $(i, j)$ into a table
+                gives the identity matrix. Writing $J$ for the sublayer's own
+                Jacobian:
+              </p>
+              <div class="my-4 py-2 text-center">
+                $$\frac{\partial y}{\partial x} = I + J, \qquad J =
+                \frac{\partial f}{\partial x}$$
+              </div>
+              <p>
+                Now the correction itself. Write $\mathcal{L}$ for the
+                <strong>loss</strong>. Backpropagation arrives carrying $g =
+                \partial \mathcal{L} / \partial y$, which says how that loss
+                responds to this step's output, and turns it into $\partial
+                \mathcal{L} / \partial x$ by multiplying by the Jacobian:
+              </p>
+              <div class="my-4 py-2 text-center">
+                $$\frac{\partial \mathcal{L}}{\partial x} = g\,(I + J) = g +
+                gJ$$
+              </div>
+              <p>
+                Two terms, and they are the two arrows in the figure below. The
+                $g$ on its own is the copy that arrives unchanged, and $gJ$ is
+                the copy that went through the sublayer. The addition in the
+                forward pass is what splits the correction in the backward one.
+              </p>
+              <h3 class="text-lg font-semibold text-ink dark:text-white pt-2">
+                Why it matters over a deep stack
+              </h3>
+              <p>
+                Stack $L$ blocks, the same $L$ the figures label as "blocks 3 to
+                $L$".
+                <b
+                  >Without the residual, each step contributes only its own
+                  Jacobian</b
+                >, and the correction reaching the first one is a product of all
+                of them:
+              </p>
+              <div class="my-4 py-2 text-center">
+                $$\frac{\partial \mathcal{L}}{\partial x_1} = g\, J_L J_{L-1}
+                \cdots J_1$$
+              </div>
+              <p>
+                Every factor scales what passes through it. If those factors are
+                typically a little smaller than one, the product shrinks towards
+                nothing long before it arrives, and if they are a little larger
+                it grows without bound. <b>With the residual</b>, each factor
+                becomes $I + J_\ell$ instead:
+              </p>
+              <div class="my-4 py-2 text-center">
+                $$\frac{\partial \mathcal{L}}{\partial x_1} = g\,(I + J_L)(I +
+                J_{L-1}) \cdots (I + J_1)$$
+              </div>
+              <p>
+                Every bracket in that product is the $I + \partial
+                \operatorname{Sublayer} / \partial x$ we derived at the top of
+                this aside, one copy of it per sublayer in the stack. Multiply
+                the product out and it becomes a sum of many terms, one for
+                every way of picking either $I$ or $J_\ell$ out of each bracket.
+                One of those terms picks $I$ every single time, and $I\,I \cdots
+                I = I$, so that term is simply $g$.
+                <span class="hl-c2"
+                  >The correction that reaches the first block always contains
+                  an exact copy of the one that left the loss</span
+                >, whatever the $J_\ell$ happen to be doing.
+              </p>
+              <p>
+                That term is the express lane, written out. Picking $I$ from
+                every bracket is the same as taking the stream arrow at every
+                fork in the figure below, the route that never once enters a
+                sublayer. Picking $J_\ell$ from a bracket is stepping onto the
+                branch at that block instead. The product simply enumerates
+                every route the correction can take.
+              </p>
+            </div>
+          </details>
+
+          <figure class="my-10 flex flex-col items-center">
+            <img
+              src="../figures/build/gradient_path.svg"
+              alt="Two rows over the same two blocks, with every arrow pointing left to show a correction travelling back from the loss. In the top row there are no residual connections and the correction passes through every sublayer in turn. In the bottom row it splits at each addition, one copy continuing along the stream untouched and one climbing into the sublayer."
+              class="w-full max-w-3xl"
+            />
+            <figcaption class="mt-3 text-sm text-muted text-center max-w-3xl">
+              The same stack, read backwards. Without the additions a correction
+              can only reach block 1 by passing through everything in between.
+              With them it always has a route that passes through nothing at
+              all.
             </figcaption>
           </figure>
 

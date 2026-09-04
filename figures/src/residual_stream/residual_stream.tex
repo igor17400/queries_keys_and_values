@@ -1,4 +1,4 @@
-\documentclass[tikz,border=10pt]{standalone}
+\documentclass[12pt,tikz,border=10pt]{standalone}
 \usetikzlibrary{arrows.meta, positioning, calc}
 \usepackage{amsmath}
 \usepackage{amssymb}
@@ -13,7 +13,7 @@
 \definecolor{c3}{HTML}{E491C9}
 \definecolor{c4}{HTML}{F1E9E9}
 \definecolor{axiscolor}{HTML}{333333}
-\definecolor{labelcolor}{HTML}{6B6472}
+\definecolor{labelcolor}{HTML}{000000}
 
 % ================================================================
 %  GEOMETRY, planned before any TikZ was written.
@@ -34,7 +34,11 @@
 %                  FFN       tap bx+3.3, add bx+5.9
 %     bx = 1.4 (panel 0.95..7.75) and bx = 8.6 (panel 8.15..14.95)
 %     panels y in [-0.8, 2.4], titles at y = 2.5
-%  continuation: dots at (15.9, 1.6), label under at (15.9, 0.62)
+%  continuation: dots at (16.1, 1.6), label under at (16.1, 1.00),
+%     kept high so it clears both the stream and the y label.
+%  left cluster is stacked, not strung out: x above the stream at
+%     x = -0.85, its gloss below it, and the first width stamp pushed
+%     right to x = 0.45 so nothing shares a line with anything.
 %
 %  THE ADD, identical everywhere (drawn by \addsym):
 %     stream (already down) -> white disc r = 0.24, c1 stroke 1.0pt
@@ -43,7 +47,7 @@
 %  Nothing else inside the disc.  Taps are small c1 dots (r = 0.07)
 %  sitting 0.7 clear of any disc.
 %
-%  Width stamps, c1: below the stream at x = 0.35 and x = 16.3, and
+%  Width stamps, c1: below the stream at x = 0.45 and x = 16.35, and
 %  one per branch return at (add - 0.15, 0.80), anchored east so the
 %  text runs back under its own box and never near the next riser.
 %  Key for the add symbol: (0.0, -1.55), drawn by the same macro.
@@ -59,9 +63,9 @@
              draw opacity=0.55, rounded corners=4pt},
   panel/.style={fill=c4, rounded corners=7pt, draw=c1, draw opacity=0.30,
                 line width=0.7pt},
-  wid/.style={font=\sffamily\footnotesize, text=c1},
-  title/.style={font=\sffamily\small, text=c1, anchor=south},
-  key/.style={font=\sffamily\footnotesize, text=labelcolor},
+  wid/.style={font=\sffamily\small, text=black},
+  title/.style={font=\sffamily\normalsize, text=black, anchor=south},
+  key/.style={font=\sffamily\Large, text=black},
 }
 
 % the residual add: the stream itself is the horizontal bar of the plus
@@ -101,23 +105,23 @@
 }
 
 % ---------------------------------------------------------------- continuation
-\node[font=\sffamily\LARGE, text=labelcolor] at (15.9, 1.6) {$\cdots$};
-\node[font=\sffamily\footnotesize, text=labelcolor] at (15.9, 0.62)
+\node[font=\sffamily\LARGE, text=labelcolor] at (16.1, 1.6) {$\cdots$};
+\node[font=\sffamily\small, text=black] at (16.1, 1.00)
     {blocks $3$ to $L$};
 
 % ---------------------------------------------------------------- ends
-\node[anchor=east, align=right] at (-0.75, 0)
-    {{\large\textcolor{c1}{$x$}}\\[2pt]
-     {\footnotesize\textcolor{labelcolor}{row (3) \emph{chased}}}};
+\node[anchor=east] at (-0.85, 0.36) {{\large\textcolor{c1}{$x$}}};
+\node[anchor=east, text=black, font=\sffamily\small] at (-1.20, -0.36)
+    {row (3) \emph{chased}};
 \node[anchor=west] at (17.45, 0) {{\large\textcolor{c1}{$y$}}};
 
-\node[wid, anchor=north] at (0.1, -0.20) {$d_{\mathrm{model}} = 9$};
+\node[wid, anchor=north] at (-0.25, -0.20) {$d_{\mathrm{model}} = 9$};
 \node[wid, anchor=north] at (16.35, -0.20) {$d_{\mathrm{model}} = 9$};
 
 % ---------------------------------------------------------------- key
-\draw[draw=c1, line width=1.8pt] (-0.35, -1.55) -- (0.35, -1.55);
-\addsym{0.0}{-1.55}
-\node[key, anchor=west] at (0.45, -1.55) {$x + \mathrm{Sublayer}(x)$};
+\draw[draw=c1, line width=1.8pt] (5.25, -1.60) -- (5.95, -1.60);
+\addsym{5.60}{-1.60}
+\node[key, anchor=west] at (6.10, -1.60) {$x + \mathrm{Sublayer}(x)$};
 
 \end{tikzpicture}
 \end{document}

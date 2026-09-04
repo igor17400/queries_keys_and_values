@@ -1,4 +1,4 @@
-\documentclass[tikz,border=10pt]{standalone}
+\documentclass[12pt,tikz,border=10pt]{standalone}
 \usetikzlibrary{arrows.meta, positioning, calc, decorations.pathreplacing, fit}
 \usepackage{amsmath}
 \usepackage{amssymb}
@@ -13,117 +13,136 @@
 \definecolor{c3}{HTML}{E491C9}
 \definecolor{c4}{HTML}{F1E9E9}
 \definecolor{axiscolor}{HTML}{333333}
-\definecolor{labelcolor}{HTML}{6B6472}
+\definecolor{labelcolor}{HTML}{000000}
 
 % ================================================================
 % PLAN.  Two rows, each one variant, drawn by ONE skeleton macro so
 % every element except the LN boxes is guaranteed identical.
 %
+% TYPE.  12pt class, as in residual_stream.  Everything the page has
+% to read is \normalsize (12pt) or \large (14.4pt); nothing smaller.
+% The page rescales the figure to 768px, so what matters is pt of
+% text per pt of figure width: the frame is held near 24.3cm
+% (~691pt) so \normalsize lands at ~13px and \large at ~16px.
+% Holding that width with six units and 12pt labels is what fixes the
+% unit geometry below: the sublayer box is 2.05cm wide (MultiHead at
+% \normalsize measures 54.8pt) and it OVERHANGS both of its risers,
+% which is the only way the pitch gets under 3.05cm.
+%
 % Local coordinates inside a row, y = 0 is the residual stream.
 %
-%   unit i taps the stream at x = T_i, pitch 3.50 inside a block,
-%   extra 0.70 between blocks:
-%     T = 0, 3.50, 7.70, 11.20, 15.40, 18.90
-%     riser up at  T          to y = 1.45
-%     sublayer box centred (T + 1.08, 1.45), 1.70 x 0.62
-%     riser down at T + 2.06  to the add at (T + 2.06, 0)
+%   unit i taps the stream at x = T_i, pitch 3.00 inside a block,
+%   extra 0.80 between blocks:
+%     T = 0, 3.00, 6.80, 9.80, 13.60, 16.60
+%     riser up at  T          to the box underside, y = 1.325
+%                            (arrow drawn to 1.32 so its tip meets the border)
+%     sublayer box centred (T + 0.475, 1.70), 2.05 x 0.75,
+%       so it spans T-0.55 .. T+1.50 and hangs over both risers
+%     riser down at T + 0.95  to the add at (T + 0.95, 0)
 %   sublayers alternate MultiHead, FFN; two per block, three blocks.
 %
 %   THE ADD, one construction everywhere in this section:
 %     circle r = 0.24, white fill, c1 stroke 1.0pt; then the stream is
-%     re-stroked straight across the circle at its own 2.4pt weight so
+%     re-stroked straight across the circle at its own 1.8pt weight so
 %     it is the horizontal bar of the plus and is never cut; then the
-%     vertical stroke, c1 2.4pt, half-length 0.18.  No glyph text.
+%     vertical stroke, c1 1.8pt, half-length 0.18.  No glyph text.
 %
 %   THE ONE DISPLACED BOX
-%     post-norm : LN on the stream at (T_i + 2.90, 0)      i = 0..5
-%     pre-norm  : LN on the riser   at (T_i,       0.72)   i = 0..5
+%     post-norm : LN on the stream at (T_i + 1.83, 0)      i = 0..5
+%     pre-norm  : LN on the riser   at (T_i,       0.68)   i = 0..5
 %   nothing else moves.
-%     clearances in (a): add edge T+2.30 | LN T+2.55..T+3.25 | tap T+3.50
+%     clearances in (a): add edge T+1.19 | LN T+1.43..T+2.23 |
+%                        next box edge T+2.45 | next tap T+3.00
+%     clearances in (b): stream 0 | LN 0.33..1.03 | box under 1.325
 %
-%   block panels  x: -0.40..6.95 | 7.30..14.65 | 15.00..22.35
-%                 y: -1.45..2.05,  label at y = 2.16
-%   stream        x: -1.00..23.85,  output head box at 24.65
-%   gradient      y = -0.85, running right to left and drawn last, so
+%   block panels  x: -0.85..5.55 | 5.95..12.35 | 12.75..19.15
+%                 y: -1.90..2.35,  label at y = 2.45
+%   stream        x: -1.25..20.90,  output head box centred 21.75
+%   gradient      y = -1.05, running right to left and drawn last, so
 %                 where it bumps up to y = -0.21 it is visibly threaded
 %                 through the LN box rather than stopped under it:
-%                 post-norm 2.90 6.40 10.60 14.10 18.30 21.80  (six)
-%                 pre-norm  23.00 only, the final LN           (one)
+%                 post-norm 1.83 4.83 8.63 11.63 15.43 18.43  (six)
+%                 pre-norm  20.00 only, the final LN           (one)
 %
-%   rows: post-norm at y = 6.0, pre-norm at y = 0, titles at yb + 2.95
+%   rows: post-norm at y = 6.80, pre-norm at y = 0, titles at yb + 3.50
+%   legend under row (b) at y = -2.60, centred on the frame: the add
+%   key (echoing residual_stream) and what LN stands for.
+%
+%   ALL TEXT IS BLACK.  c2 is kept for the gradient path and for the
+%   stroke and fill of the sublayer boxes only.
 % ================================================================
 
 \tikzset{
   stream/.style={c1, line width=1.8pt, line cap=round},
   branch/.style={c1, opacity=0.55, line width=1.0pt, rounded corners=4pt,
                  -{Stealth[length=5pt]}},
-  sub/.style={draw=c2, line width=0.9pt, fill=c2, fill opacity=0.10,
-              text opacity=1, text=c2, rounded corners=3pt,
-              minimum width=1.70cm, minimum height=0.62cm, inner sep=1pt,
-              font=\sffamily\small},
-  ln/.style={draw=axiscolor, line width=0.9pt, fill=c4, text=axiscolor,
-             rounded corners=2.5pt, minimum width=0.70cm,
-             minimum height=0.60cm, inner sep=1pt, font=\sffamily\small},
-  grad/.style={c2, line width=1.3pt, dash pattern=on 3.4pt off 2.2pt,
-               rounded corners=3pt, -{Stealth[length=6pt]}},
+  sub/.style={draw=c2, line width=1.0pt, fill=c2, fill opacity=0.10,
+              text opacity=1, text=black, rounded corners=3pt,
+              minimum width=2.05cm, minimum height=0.75cm, inner sep=1pt,
+              font=\sffamily\normalsize},
+  ln/.style={draw=axiscolor, line width=0.9pt, fill=c4, text=black,
+             rounded corners=2.5pt, minimum width=0.80cm,
+             minimum height=0.70cm, inner sep=1pt, font=\sffamily\normalsize},
+  grad/.style={c2, line width=1.4pt, dash pattern=on 3.6pt off 2.4pt,
+               rounded corners=3pt, -{Stealth[length=7pt]}},
   panel/.style={fill=c4, draw=c1, draw opacity=0.30, line width=0.7pt,
-                rounded corners=5pt},
-  blab/.style={font=\sffamily\small, text=c1, anchor=south},
-  ann/.style={font=\sffamily\small, text=labelcolor},
-  title/.style={font=\sffamily\small, text=axiscolor, anchor=west},
+                rounded corners=6pt},
+  blab/.style={font=\sffamily\large, text=black, anchor=south},
+  ann/.style={font=\sffamily\normalsize, text=black},
+  title/.style={font=\sffamily\large, text=black, anchor=west},
+  key/.style={font=\sffamily\large, text=black},
 }
 
 % the add: stream passes straight through, so the identity path is
-% never broken by a white fill.  Argument: the x of the circle centre.
-\newcommand{\addcirc}[1]{%
-  \draw[draw=c1, line width=1.0pt, fill=white] (#1, 0) circle (0.24);
-  \draw[stream] ({#1 - 0.25}, 0) -- ({#1 + 0.25}, 0);
-  \draw[stream] (#1, -0.18) -- (#1, 0.18);
+% never broken by a white fill.  Arguments: x and y of the centre.
+\newcommand{\addcirc}[2]{%
+  \draw[draw=c1, line width=1.0pt, fill=white] (#1, #2) circle (0.24);
+  \draw[stream] ({#1 - 0.26}, #2) -- ({#1 + 0.26}, #2);
+  \draw[stream] (#1, {#2 - 0.18}) -- (#1, {#2 + 0.18});
 }
 
 % ---------------------------------------------------------------- skeleton
 % everything both variants share, drawn identically in both rows
 \newcommand{\rowpanels}{%
-  \foreach \a/\b/\n in {-0.40/6.95/1, 7.30/14.65/2, 15.00/22.35/3} {
-      \path[panel] (\a, -1.45) rectangle (\b, 2.05);
-      \node[blab] at ({0.5*(\a+\b)}, 2.16) {block \n};
+  \foreach \a/\b/\n in {-0.85/5.55/1, 5.95/12.35/2, 12.75/19.15/3} {
+      \path[panel] (\a, -1.90) rectangle (\b, 2.35);
+      \node[blab] at ({0.5*(\a+\b)}, 2.45) {block \n};
   }
 }
 \newcommand{\rowbody}{%
-  \draw[stream, -{Stealth[length=7pt]}] (-1.0, 0) -- (23.85, 0);
-  \node[font=\sffamily\large, text=c1, anchor=east] at (-1.15, 0) {$x$};
-  \node[ann, anchor=north] at (1.05, -0.26) {$d_{\mathrm{model}} = 9$};
-  \foreach \i/\T/\nm in {0/0/MultiHead, 1/3.50/FFN, 2/7.70/MultiHead,
-                         3/11.20/FFN, 4/15.40/MultiHead, 5/18.90/FFN} {
-      \pgfmathsetmacro{\Tb}{\T + 2.06}
+  \draw[stream, -{Stealth[length=8pt]}] (-1.25, 0) -- (20.90, 0);
+  \node[font=\sffamily\LARGE, text=c1, anchor=east] at (-1.40, 0) {$x$};
+  \node[ann, anchor=north] at (0.10, -0.42) {$d_{\mathrm{model}} = 9$};
+  \foreach \i/\T/\nm in {0/0/MultiHead, 1/3.00/FFN, 2/6.80/MultiHead,
+                         3/9.80/FFN, 4/13.60/MultiHead, 5/16.60/FFN} {
+      \pgfmathsetmacro{\Tb}{\T + 0.95}
       \fill[c1] (\T, 0) circle (0.09);
-      \node[sub] (s\i) at ({\T + 1.08}, 1.45) {$\mathrm{\nm}$};
-      \draw[branch] (\T, 0) -- (\T, 1.45) -- (s\i.west);
-      \draw[branch] (s\i.east) -- (\Tb, 1.45) -- (\Tb, 0.34);
-      \addcirc{\Tb}
+      \node[sub] (s\i) at ({\T + 0.475}, 1.70) {$\mathrm{\nm}$};
+      \draw[branch] (\T, 0) -- (\T, 1.32);
+      \draw[branch] (\Tb, 1.325) -- (\Tb, 0.34);
+      \addcirc{\Tb}{0}
   }
   \node[draw=c1, line width=0.9pt, fill=white, rounded corners=3pt,
-        minimum width=1.60cm, minimum height=0.86cm, align=center,
-        text=c1, font=\sffamily\small] at (24.65, 0) {output\\head};
-  \node[font=\sffamily\small, text=c2, anchor=north west] at (-0.30, -1.00)
-      {gradient};
+        minimum width=1.70cm, minimum height=1.05cm, align=center,
+        text=black, font=\sffamily\normalsize] at (21.75, 0) {output\\head};
+  \node[ann, anchor=north west] at (-0.75, -1.20) {gradient};
 }
 
 % ================================================================
 % (a)  post-norm : the LN boxes sit ON the stream
 % ================================================================
-\begin{scope}[shift={(0, 6.0)}]
+\begin{scope}[shift={(0, 6.80)}]
   \rowpanels
   \rowbody
-  \foreach \T in {0, 3.50, 7.70, 11.20, 15.40, 18.90} {
-      \node[ln] at ({\T + 2.90}, 0) {$\mathrm{LN}$};
+  \foreach \T in {0, 3.00, 6.80, 9.80, 13.60, 16.60} {
+      \node[ln] at ({\T + 1.83}, 0) {$\mathrm{LN}$};
   }
-  \draw[grad] (23.70, -0.85)
-      \foreach \c in {21.80, 18.30, 14.10, 10.60, 6.40, 2.90} {
-        -- ({\c + 0.55}, -0.85) -- ({\c + 0.24}, -0.21)
-        -- ({\c - 0.24}, -0.21) -- ({\c - 0.55}, -0.85) }
-      -- (-1.0, -0.85);
-  \node[title] at (-1.60, 2.95)
+  \draw[grad] (21.30, -1.05)
+      \foreach \c in {18.43, 15.43, 11.63, 8.63, 4.83, 1.83} {
+        -- ({\c + 0.55}, -1.05) -- ({\c + 0.26}, -0.21)
+        -- ({\c - 0.26}, -0.21) -- ({\c - 0.55}, -1.05) }
+      -- (-1.25, -1.05);
+  \node[title] at (-1.70, 3.50)
       {\textbf{(a) post-norm}\quad
        $x \leftarrow \mathrm{LN}\bigl(x + \mathrm{Sublayer}(x)\bigr)$};
 \end{scope}
@@ -134,24 +153,33 @@
 \begin{scope}[shift={(0, 0)}]
   \rowpanels
   \rowbody
-  \foreach \T in {0, 3.50, 7.70, 11.20, 15.40, 18.90} {
-      \node[ln] at (\T, 0.72) {$\mathrm{LN}$};
+  \foreach \T in {0, 3.00, 6.80, 9.80, 13.60, 16.60} {
+      \node[ln] at (\T, 0.68) {$\mathrm{LN}$};
   }
   % the one extra box: the final LN, after the stack, before the head
-  \node[ln] (fln) at (23.00, 0) {$\mathrm{LN}$};
+  \node[ln] (fln) at (20.00, 0) {$\mathrm{LN}$};
   \node[draw=c2, dashed, line width=0.8pt, rounded corners=4pt,
         fit=(fln), inner sep=3pt] {};
-  \node[font=\sffamily\small, text=c2, anchor=south] at (23.00, 0.78)
-      {final $\mathrm{LN}$};
-  \draw[grad] (23.70, -0.85)
-      \foreach \c in {23.00} {
-        -- ({\c + 0.55}, -0.85) -- ({\c + 0.24}, -0.21)
-        -- ({\c - 0.24}, -0.21) -- ({\c - 0.55}, -0.85) }
-      -- (-1.0, -0.85);
-  \node[title] at (-1.60, 2.95)
+  \node[ann, anchor=south] at (20.00, 0.60) {final $\mathrm{LN}$};
+  \draw[grad] (21.30, -1.05)
+      \foreach \c in {20.00} {
+        -- ({\c + 0.55}, -1.05) -- ({\c + 0.26}, -0.21)
+        -- ({\c - 0.26}, -0.21) -- ({\c - 0.55}, -1.05) }
+      -- (-1.25, -1.05);
+  \node[title] at (-1.70, 3.50)
       {\textbf{(b) pre-norm}\quad
        $x \leftarrow x + \mathrm{Sublayer}\bigl(\mathrm{LN}(x)\bigr)$};
 \end{scope}
+
+% ================================================================
+% legend, shared vocabulary with residual_stream
+% ================================================================
+\draw[stream] (2.70, -2.60) -- (3.40, -2.60);
+\addcirc{3.05}{-2.60}
+\node[key, anchor=west] at (3.55, -2.60) {$x + \mathrm{Sublayer}(x)$};
+\node[ln] at (8.20, -2.60) {$\mathrm{LN}$};
+\node[key, anchor=west] at (8.75, -2.60)
+    {layer normalisation, rescales one word's vector};
 
 \end{tikzpicture}
 \end{document}
