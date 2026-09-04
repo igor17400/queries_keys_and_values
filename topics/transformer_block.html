@@ -689,7 +689,7 @@
         <!-- Subsection 4: layer normalisation, and where it sits -->
         <section>
           <h2 class="text-2xl font-semibold text-ink dark:text-white mb-4">
-            Keeping the numbers in range
+            Keeping the numbers in range - Layer normalisation (LN)
           </h2>
           <p>
             The fix is to put the numbers back in range before a sublayer ever
@@ -798,17 +798,45 @@
           </figure>
 
           <p class="mt-4">
-            So far the idea has been to noramlise the vector before a sublayer
+            So far the idea has been to normalise the vector before a sublayer
             reads it. However, this normalisation could also be applied after
-            the addition, to the sum itself: $$\mathbf{x} \leftarrow
-            \operatorname{LN}\bigl(\mathbf{x} +
-            \operatorname{Sublayer}(\mathbf{x})\bigr)$$ which is called
-            <b>post-norm</b>. The alternative, and what almost every model since
-            has used, normalises only the copy of the sublayer reads and leaves
-            the stream itself untouched: $$\mathbf{x} \leftarrow \mathbf{x} +
+            the addition, to the sum itself, which is what the original
+            Transformer did:
+          </p>
+          <div
+            class="my-3 py-3 text-center rounded-lg border border-c3/40 bg-c3/5"
+          >
+            $$\mathbf{x} \leftarrow \operatorname{LN}\bigl(\mathbf{x} +
+            \operatorname{Sublayer}(\mathbf{x})\bigr)$$
+          </div>
+          <p class="mt-4">
+            That arrangement is called <b>post-norm</b>. The alternative, and
+            what almost every model since has used, normalises only the copy the
+            sublayer reads and leaves the stream itself untouched:
+          </p>
+          <div
+            class="my-3 py-3 text-center rounded-lg border border-c3/40 bg-c3/5"
+          >
+            $$\mathbf{x} \leftarrow \mathbf{x} +
             \operatorname{Sublayer}\bigl(\operatorname{LN}(\mathbf{x})\bigr)$$
-            which is the <b>pre-norm</b>. The two differ by one box moved. Both
-            of them can be seen in the illustration below.
+          </div>
+          <p class="mt-4">
+            which is called <b>pre-norm</b>. The two differ by one box moved.
+          </p>
+
+          <p class="mt-4">
+            However that one box decides how the gradient flows. In post-norm
+            the normalisation sits on the stream, so the path from the last
+            subsection is interrupted at every step, and a correction travelling
+            back to block 1 is rescaled by every one of those boxes on the way.
+            In pre-norm the stream is not touched, and the additive path runs as
+            we declared above, from the embeddings all the way to the output.
+            The price is one extra $\operatorname{LN}$ at the very end, since
+            the stream now reaches the output head unnormalised. The figure
+            below draws both, three blocks deep with everything identical except
+            where the $\operatorname{LN}$ boxes sit. Follow the dashed line
+            running back from the right: in row (a) it climbs through all six of
+            them, in row (b) it passes through none.
           </p>
 
           <figure class="my-10 flex flex-col items-center">
@@ -818,11 +846,61 @@
               class="w-full max-w-3xl"
             />
             <figcaption class="mt-3 text-sm text-muted text-center max-w-xl">
-              Difference between the pre-norm and post-norm architectures.
+              One box moved off the main line. That is the whole difference, and
+              it is what keeps the unbroken path of the previous figures alive
+              through a deep stack.
             </figcaption>
           </figure>
+        </section>
 
-          <!-- Subsection 6: the block, assembled -->
+        <section>
+          <h2 class="text-2xl font-semibold text-ink dark:text-white mb-4">
+            Assembling our legos here comes the Transformer!
+          </h2>
+          <p>
+            We have attention to move information between words, a feed-forward
+            network to compute with it, an addition so that neither one
+            overwrites what came before, and a normalisation so that the numbers
+            stay in range however deep the stack goes. A
+            <strong>transformer block</strong> is those four things in the order
+            we arrived at them:
+          </p>
+          <div
+            class="my-3 py-3 text-center rounded-lg border border-c3/40 bg-c3/5"
+          >
+            $$\mathbf{z} = \mathbf{x} +
+            \operatorname{MultiHead}\bigl(\operatorname{LN}_1(\mathbf{x})\bigr),
+            \qquad \mathbf{y} = \mathbf{z} +
+            \operatorname{FFN}\bigl(\operatorname{LN}_2(\mathbf{z})\bigr)$$
+          </div>
+          <p class="mt-4">
+            Two sublayers, two norms, two additions. $\mathbf{x}$ is the
+            sentence arriving, $\mathbf{z}$ is what it becomes once attention
+            has had its say, and $\mathbf{y}$ is what leaves. The two
+            normalisations are separate, each with its own learned
+            $\boldsymbol{\gamma}$ and $\boldsymbol{\beta}$, which is why they
+            carry different subscripts.
+          </p>
+
+          <p class="mt-4">
+            In terms of tensor shapes
+            <span class="hl-c2"
+              >$\mathbf{x}$, $\mathbf{z}$ and $\mathbf{y}$ are all $n \times
+              d_{\text{model}}$</span
+            >, so a block hands back exactly what it was given: five words in,
+            five words out, nine numbers each. That is the property we have been
+            collecting since
+            <a
+              href="multi_head.html"
+              class="text-c2 hover:text-c3 transition-colors"
+              >section 07</a
+            >, where $W_O$ folded the heads back to the width they started at,
+            and it is what lets us write $\operatorname{Block}(\mathbf{x})$ and
+            then feed the result into another block, and another, without
+            anything in between having to change. The figure below opens one
+            block up and puts a shape on every edge inside it.
+          </p>
+
           <figure class="my-10 flex flex-col items-center">
             <img
               src="../figures/build/transformer_block.svg"
@@ -837,7 +915,242 @@
             </figcaption>
           </figure>
 
-          <!-- Subsection 7: the whole model -->
+          <p class="mt-4">
+            The exciting part is that all of this fits in four lines of code! Of
+            course lots of abstraction happening behind the curtains. The two
+            sublayers are the ones we already wrote in
+            <a
+              href="multi_head.html"
+              class="text-c2 hover:text-c3 transition-colors"
+              >section 07</a
+            >
+            and
+            <a
+              href="masking.html"
+              class="text-c2 hover:text-c3 transition-colors"
+              >section 08</a
+            >, and everything this section added is the wrapping around them.
+            Notice that <code class="text-c2">layer_norm</code> takes its mean
+            and variance over <code class="text-c2">dim=-1</code>, the feature
+            axis, which is the whole of the argument two subsections back
+            written as one keyword.
+          </p>
+
+          <div
+            class="my-8 rounded-xl overflow-hidden border border-gray-300 dark:border-gray-700 shadow-lg"
+          >
+            <div class="bg-[#ebdbb2] px-4 py-2 flex items-center gap-2">
+              <span class="w-3 h-3 rounded-full bg-[#cc241d]"></span>
+              <span class="w-3 h-3 rounded-full bg-[#d79921]"></span>
+              <span class="w-3 h-3 rounded-full bg-[#98971a]"></span>
+              <span class="ml-3 text-xs text-[#7c6f64] font-mono"
+                >transformer_block.py</span
+              >
+            </div>
+            <pre
+              class="!m-0 !p-0 text-sm font-mono leading-relaxed overflow-x-auto"
+            ><code class="language-python p-5 block">def layer_norm(X, gamma, beta, eps=1e-5):
+    """Statistics from the last axis alone, so every position is on its own."""
+    mu = X.mean(dim=-1, keepdim=True)
+    var = X.var(dim=-1, unbiased=False, keepdim=True)
+    return (X - mu) / torch.sqrt(var + eps) * gamma + beta
+
+
+def feed_forward(X, W_1, b_1, W_2, b_2):
+    """Applied to each row on its own: d_model -&gt; d_ff -&gt; d_model."""
+    return F.relu(X @ W_1 + b_1) @ W_2 + b_2
+
+
+def block(X, attn, ffn, ln_1, ln_2, mask=None):
+    """One pre-norm block. X is (n, d_model), and so is the result."""
+    Z = X + multi_head_attention(layer_norm(X, *ln_1), *attn, mask)
+    Y = Z + feed_forward(layer_norm(Z, *ln_2), *ffn)
+    return Y
+</code></pre>
+          </div>
+
+          <p class="mt-4">
+            Every claim this subsection made is a line in that function. The
+            sublayer reads <code class="text-c2">layer_norm(X, ...)</code> and
+            never the stream itself, so the norm sits on the branch. What it
+            returns is added to <code class="text-c2">X</code> rather than
+            replacing it. And <code class="text-c2">Y</code> comes out shaped
+            exactly like <code class="text-c2">X</code>, which is what allows
+            the last line of one block to be the first argument of the next.
+          </p>
+
+          <p class="mt-4">
+            Let's just visualize some numbers to get a sense of the number of
+            parameters.
+          </p>
+          <ul class="mt-3 ml-6 space-y-3 list-disc text-[18px]">
+            <li>
+              <strong>Attention</strong> &rarr; $W_Q$, $W_K$, $W_V$ and $W_O$,
+              which across all $h$ heads come to $4d_{\text{model}}^2$ weights,
+              or <strong>324</strong> for our nine-wide example.
+            </li>
+            <li>
+              <strong>Feed-forward</strong> &rarr; $W_1$ and $W_2$, which at
+              $d_{\text{ff}} = 4d_{\text{model}}$ come to $8d_{\text{model}}^2$
+              weights, or <strong>648</strong>.
+            </li>
+          </ul>
+        </section>
+        <section>
+          <h2 class="text-2xl font-semibold text-ink dark:text-white mb-4">
+            The whole model, at last
+          </h2>
+          <p>
+            Once we stack $L$ of these blocks together, the model is nearly
+            complete. Each block takes in an $n \times d_{\text{model}}$ matrix
+            and outputs one of the exact same size, meaning they can be stacked
+            continuously without changing anything in between. By the time the
+            sentence reaches the top, it has been read and updated $L$ times
+            over. The pre-normalization setup does leave one loose end, though.
+            The data stream arrives at the top carrying $2L$ different
+            additions, and it has not been normalized since the final branch.
+            Because of this, a final Layer Normalization step is applied to the
+            stream before the rest of the model is allowed to read the results.
+          </p>
+          <p class="mt-4">
+            One piece is still missing, and it is the one
+            <a
+              href="masking.html"
+              class="text-c2 hover:text-c3 transition-colors"
+              >section 08</a
+            >
+            has been waiting for. The stack gives us an $n \times
+            d_{\text{model}}$ matrix, one vector per position, and what the task
+            asks for is a word. So we add one more learned matrix, of shape
+            $d_{\text{model}} \times \lvert\mathcal{V}\rvert$ where
+            $\mathcal{V}$ is the vocabulary, and multiply the stream by it. Each
+            row of $d_{\text{model}}$ numbers becomes a row of
+            $\lvert\mathcal{V}\rvert$ numbers, one score for every word the
+            model knows. A softmax along that row turns those scores into a
+            distribution, the same operation
+            <a
+              href="softmax_weights.html"
+              class="text-c2 hover:text-c3 transition-colors"
+              >section 04</a
+            >
+            used to turn attention scores into weights, and that distribution is
+            the answer.
+            <span class="hl-c2">
+              For each position, how likely the model thinks each word is to
+              come next</span
+            >.
+          </p>
+
+          <details class="my-6 panel-c4 rounded-xl">
+            <summary
+              class="px-6 py-4 cursor-pointer text-ink dark:text-white font-medium"
+            >
+              Aside: what the vocabulary actually is
+            </summary>
+            <div class="px-6 pb-6 space-y-4 text-gray-700 dark:text-gray-300">
+              <p>
+                We have used the word <em>token</em> since
+                <a
+                  href="self_attention.html"
+                  class="text-c2 hover:text-c3 transition-colors"
+                  >section 06</a
+                >
+                without saying what the full list of them is. The vocabulary
+                $\mathcal{V}$ is that list: every distinct token the model is
+                able to read or produce, fixed once before training and never
+                changed afterwards. A token id is nothing more than a position
+                in it, so the <code class="text-c2">26172</code> beside
+                <em>chased</em> in the figure means row 26172 of the table, and
+                nothing else.
+              </p>
+              <p>
+                The entries are not quite words. A vocabulary of English words
+                would be both enormous and permanently incomplete, since there
+                is always a name or a typo it has never seen. So the list is
+                built from <strong>subword pieces</strong> instead, chosen so
+                that common words get an entry to themselves while rare ones are
+                spelled out of smaller parts. For instance, <em>chased</em> is
+                likely one token, where a word the model has never met is two or
+                three, and nothing is ever unrepresentable.
+                <span class="hl-c3"
+                  >Every string can be written, and the list stays finite</span
+                >.
+              </p>
+              <p>
+                How big? The original Transformer used about 37,000 subword
+                entries, GPT-2 used 50,257, and recent models run to 100,000 or
+                more. That number is not a free choice, because it shows up
+                twice in the model and in both places it costs:
+              </p>
+              <ul class="mt-3 ml-6 space-y-3 list-disc text-[18px]">
+                <li>
+                  <strong>Going in</strong> &rarr; the embedding table of
+                  <a
+                    href="self_attention.html"
+                    class="text-c2 hover:text-c3 transition-colors"
+                    >section 06</a
+                  >
+                  is $\lvert\mathcal{V}\rvert \times d_{\text{model}}$, one row
+                  per entry.
+                </li>
+                <li>
+                  <strong>Coming out</strong> &rarr; the matrix we just added is
+                  $d_{\text{model}} \times \lvert\mathcal{V}\rvert$, one column
+                  per entry.
+                </li>
+              </ul>
+              <p>
+                These two matrices share an identical shape, differing only by
+                transposition. Assuming dimensions of $d_{\text{model}} = 512$
+                and a vocabulary size of $\vert{}\mathcal{V}\vert{} = 50,000$,
+                each matrix contains approximately 25 million weights. For
+                comparison, a single transformer block comprises
+                $4d_{\text{model}}^2 + 8d_{\text{model}}^2$ parameters, which
+                equates to roughly 3 million weights at this specific width.
+                Consequently, a single embedding table contains approximately
+                the same number of parameters as eight complete blocks.
+              </p>
+            </div>
+          </details>
+
+          <p class="mt-4">
+            That is the whole model. Read the figure below from left to right
+            and every box in it was built somewhere in this tutorial: the
+            embedding table from
+            <a
+              href="self_attention.html"
+              class="text-c2 hover:text-c3 transition-colors"
+              >section 06</a
+            >, the position vectors from
+            <a
+              href="positional.html"
+              class="text-c2 hover:text-c3 transition-colors"
+              >section 09</a
+            >, the blocks from this section, the final norm that pre-norm made
+            necessary, and the matrix and softmax we have just added. If you
+            follow the highlighted row you can see what happens with the word
+            <strong>(3)</strong> <em>chased</em>. It goes in as a token id,
+            collects its context in every block on the way, and comes out as a
+            distribution putting 0.55 on <em>the</em>. That is the word at
+            position <strong>(4)</strong>, which is precisely the guess
+            <a
+              href="masking.html"
+              class="text-c2 hover:text-c3 transition-colors"
+              >section 08</a
+            >
+            asked position <strong>(3)</strong> to make.
+            <span class="hl-c2"
+              >The complaint we started with in
+              <a
+                href="intro.html"
+                class="text-c2 hover:text-c3 transition-colors"
+                >section 01</a
+              >, that everything a model knew about a sentence had to fit in one
+              fixed vector, has turned into a model that reads a sentence and
+              says what comes next</span
+            >.
+          </p>
+
           <figure class="my-10 flex flex-col items-center">
             <img
               src="../figures/build/full_stack.svg"
@@ -847,13 +1160,34 @@
             <figcaption class="mt-3 text-sm text-muted text-center max-w-2xl">
               Everything the tutorial has built, in one chain. The distribution
               drawn at the bottom belongs to position <strong>(3)</strong>
-              <em>chased</em>, and it is the guess that section 08 asked that
-              position for.
+              <em>chased</em>, and it is the guess that
+              <a
+                href="masking.html"
+                class="text-c2 hover:text-c3 transition-colors"
+                >Section 08</a
+              >
+              asked that position for.
             </figcaption>
           </figure>
+
+          <p class="mt-4">
+            Of course as any solution this one also has problems. Every block
+            builds an $n \times n$ table of scores for each of its $h$ heads, so
+            doubling the length of the sentence quadruples that table, and a
+            model reading a long document spends most of its memory there rather
+            than on any of the weights we have just counted. Generating text
+            makes it worse, the model produces one token at a time, and each new
+            token means pushing the whole prefix through all $L$ blocks again.
+            The
+            <a
+              href="complexity.html"
+              class="text-c2 hover:text-c3 transition-colors"
+              >next section</a
+            >
+            is about what that costs, and what can be done about it.
+          </p>
         </section>
       </div>
-
       <!-- Navigation -->
       <nav
         class="mt-20 pt-8 border-t border-gray-200 dark:border-gray-800 flex justify-between text-sm"

@@ -1,4 +1,4 @@
-\documentclass[tikz,border=10pt]{standalone}
+\documentclass[12pt,tikz,border=10pt]{standalone}
 \usetikzlibrary{arrows.meta, positioning, calc, fit}
 \usepackage{amsmath}
 \usepackage{amssymb}
@@ -13,7 +13,7 @@
 \definecolor{c3}{HTML}{E491C9}
 \definecolor{c4}{HTML}{F1E9E9}
 \definecolor{axiscolor}{HTML}{333333}
-\definecolor{labelcolor}{HTML}{6B6472}
+\definecolor{labelcolor}{HTML}{000000}
 
 % ================================================================
 % VISUAL GRAMMAR (shared across section 10)
@@ -68,15 +68,15 @@
   learn/.style={draw=axiscolor, line width=1.5pt, fill=c4, rounded corners=3pt,
                 minimum width=1.5cm, minimum height=1.25cm, align=center,
                 font=\sffamily\large, text=axiscolor},
-  shp/.style={font=\sffamily\small, text=labelcolor},
-  sub/.style={font=\sffamily\small, text=labelcolor, anchor=north},
+  shp/.style={font=\sffamily\small, text=black},
+  sub/.style={font=\sffamily\small, text=black, anchor=north},
   sym/.style={font=\sffamily\LARGE, text=c1},
-  eq/.style={font=\sffamily\small, text=axiscolor},
+  eq/.style={font=\sffamily\small, text=black},
 }
 
 \newcommand{\dotmark}[1]{\fill[axiscolor] ($(#1.north west)+(0.17,-0.17)$)
     circle (0.065);}
-\newcommand{\wshape}[1]{\\[1pt]{\small\color{labelcolor}#1}}
+\newcommand{\wshape}[1]{\\[1pt]{\small\color{black}#1}}
 
 % the stream itself is the horizontal bar of the plus: white circle, then
 % the stream re-stroked straight across it, then the vertical stroke only
@@ -103,7 +103,7 @@
 \node[shp, rotate=90, anchor=north] at (0.99, 1.05) {$5 \times 9$};
 
 \node[norm] (ln1) at (2.05, \yL) {$\mathrm{LN}_1$};
-\node[sub] at (2.05, \ysub) {$\gamma, \beta$};
+\node[sub] at (2.05, \ysub) {$\boldsymbol{\gamma}, \boldsymbol{\beta}$};
 
 \draw[panel] (3.90, \pbot) rectangle (6.70, \ptop);
 \node[ptitle] at (5.30, \ptop+0.10) {$\mathrm{MultiHead}$};
@@ -130,7 +130,7 @@
 \node[shp, rotate=90, anchor=north] at (9.69, 1.05) {$5 \times 9$};
 
 \node[norm] (ln2) at (10.75, \yL) {$\mathrm{LN}_2$};
-\node[sub] at (10.75, \ysub) {$\gamma, \beta$};
+\node[sub] at (10.75, \ysub) {$\boldsymbol{\gamma}, \boldsymbol{\beta}$};
 
 \draw[panel] (12.60, \pbot) rectangle (15.40, \ptop);
 \node[ptitle] at (14.00, \ptop+0.10) {$\mathrm{FFN}$, $d_{\mathrm{ff}} = 36$};
@@ -153,21 +153,21 @@
 
 % ---------------------------------------------------------------- equations
 \node[eq] at (4.05, -1.58)
-    {$z = x + \mathrm{MultiHead}\bigl(\mathrm{LN}_1(x)\bigr)$};
+    {$\mathbf{z} = \mathbf{x} + \mathrm{MultiHead}\bigl(\mathrm{LN}_1(\mathbf{x})\bigr)$};
 \node[eq] at (13.10, -1.58)
-    {$y = z + \mathrm{FFN}\bigl(\mathrm{LN}_2(z)\bigr)$};
+    {$\mathbf{y} = \mathbf{z} + \mathrm{FFN}\bigl(\mathrm{LN}_2(\mathbf{z})\bigr)$};
 \node[eq] at (13.10, -2.32)
     {$\mathrm{FFN}(\mathbf{u}) = \phi(\mathbf{u} W_1 + \mathbf{b}_1) W_2 + \mathbf{b}_2$};
 
 % ---------------------------------------------------------------- legend
 \draw[stream] (-0.85, -3.20) -- (0.25, -3.20);
-\node[shp, anchor=west, text=axiscolor] at (0.45, -3.20)
+\node[shp, anchor=west, text=black] at (0.45, -3.20)
     {residual stream, $n = 5$ tokens by $d_{\mathrm{model}} = 9$};
 
 \node[learn, minimum width=1.0cm, minimum height=0.62cm] (lg)
-    at (8.30, -3.20) {\phantom{$W$}};
+    at (9.60, -3.20) {\phantom{$W$}};
 \fill[axiscolor] ($(lg.north west)+(0.13,-0.13)$) circle (0.06);
-\node[shp, anchor=west, text=axiscolor] at (8.95, -3.20) {learned matrix};
+\node[shp, anchor=west, text=black] at (10.25, -3.20) {learned matrix};
 
 \end{tikzpicture}
 \end{document}
